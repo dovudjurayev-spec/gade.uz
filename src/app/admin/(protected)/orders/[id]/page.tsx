@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -23,7 +24,7 @@ export default async function OrderDetail({ params }: { params: Params }) {
   return (
     <div className="max-w-4xl">
       <div className="text-sm text-neutral-500 mb-2">
-        <a href="/admin/orders" className="hover:underline">← Заказы</a>
+        <Link href="/admin/orders" className="hover:underline">← Заказы</Link>
       </div>
       <h1 className="text-2xl mb-6">Заказ №{order.number}</h1>
 

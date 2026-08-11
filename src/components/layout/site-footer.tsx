@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function SiteFooter() {
   return (
     <footer className="border-t bg-neutral-50 mt-16">
@@ -11,19 +13,19 @@ export function SiteFooter() {
         <div>
           <div className="font-medium mb-2">Магазин</div>
           <ul className="space-y-1 text-neutral-600">
-            <li><a href="/catalog">Каталог</a></li>
-            <li><a href="/quiz">Подбор ухода</a></li>
-            <li><a href="/favorites">Избранное</a></li>
+            <li><Link href="/catalog">Каталог</Link></li>
+            <li><Link href="/quiz">Подбор ухода</Link></li>
+            <li><Link href="/favorites">Избранное</Link></li>
           </ul>
         </div>
         <div>
           <div className="font-medium mb-2">Информация</div>
           <ul className="space-y-1 text-neutral-600">
-            <li><a href="/about">О компании</a></li>
-            <li><a href="/delivery">Доставка и оплата</a></li>
-            <li><a href="/faq">FAQ</a></li>
-            <li><a href="/privacy">Политика конфиденциальности</a></li>
-            <li><a href="/offer">Публичная оферта</a></li>
+            <li><Link href="/about">О компании</Link></li>
+            <li><Link href="/delivery">Доставка и оплата</Link></li>
+            <li><Link href="/faq">FAQ</Link></li>
+            <li><Link href="/privacy">Политика конфиденциальности</Link></li>
+            <li><Link href="/offer">Публичная оферта</Link></li>
           </ul>
         </div>
         <div>

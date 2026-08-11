@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
@@ -18,7 +19,7 @@ export default async function EditProduct({ params }: { params: Params }) {
 
   return (
     <div className="max-w-3xl">
-      <div className="text-sm mb-2"><a href="/admin/products" className="hover:underline">← Товары</a></div>
+      <div className="text-sm mb-2"><Link href="/admin/products" className="hover:underline">← Товары</Link></div>
       <h1 className="text-2xl mb-2">{p.name}</h1>
       <div className="text-sm text-neutral-500 mb-6">
         SKU {p.sku} · {formatPrice(p.priceTiyin)} · остаток {p.stock}

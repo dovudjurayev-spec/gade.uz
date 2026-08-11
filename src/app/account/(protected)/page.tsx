@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { and, desc, eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders, favorites } from "@/db/schema";
 import { getCurrentCustomer } from "@/lib/customer-auth";
