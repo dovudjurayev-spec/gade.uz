@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
 import { getAdminSession } from "@/lib/admin-auth";
 import { logoutAction } from "./actions";
 
@@ -16,10 +15,6 @@ const nav = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const h = await headers();
-  const path = h.get("x-invoke-path") ?? "";
-  if (path === "/admin/login") return <>{children}</>;
-
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
 

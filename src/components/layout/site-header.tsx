@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Heart, ShoppingBag, Search } from "lucide-react";
+import { Heart, ShoppingBag, Search, User } from "lucide-react";
 import { CartBadge } from "./cart-badge";
 
 const nav = [
@@ -27,6 +27,9 @@ export function SiteHeader() {
           <button aria-label="Поиск" className="p-2 hover:text-brand-accent">
             <Search className="h-5 w-5" />
           </button>
+          <Link aria-label="Личный кабинет" href="/account" className="p-2 hover:text-brand-accent">
+            <User className="h-5 w-5" />
+          </Link>
           <Link aria-label="Избранное" href="/favorites" className="p-2 hover:text-brand-accent">
             <Heart className="h-5 w-5" />
           </Link>
