@@ -25,6 +25,10 @@ const envSchema = z.object({
   CLICK_SECRET_KEY: z.string().optional(),
 
   SENTRY_DSN: z.string().url().optional(),
+
+  ADMIN_LOGIN: z.string().min(3).default("admin"),
+  ADMIN_PASSWORD_HASH: z.string().optional(), // формат: scrypt$<salt_hex>$<hash_hex>
+  ADMIN_SESSION_SECRET: z.string().min(32).optional(),
 });
 
 export const env = envSchema.parse(process.env);
