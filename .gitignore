@@ -1,0 +1,26 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+
+# misc
+.DS_Store
+*.pem
+.vscode/
+.idea/
+
+# uploads (production)
+uploads/
+
+# drizzle (keep migrations, ignore cache)
+src/db/migrations/meta/_journal.tmp

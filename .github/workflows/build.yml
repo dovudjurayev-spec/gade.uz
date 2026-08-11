@@ -1,0 +1,47 @@
+name: Build
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (standalone)
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://build:build@localhost:5432/build
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Pack standalone artifact
+        run: |
+          mkdir -p release
+          cp -r .next/standalone release/app
+          cp -r .next/static release/app/.next/static
+          cp -r public release/app/public 2>/dev/null || true
+          tar -czf release/gade-uz.tar.gz -C release app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gade-uz-standalone
+          path: release/gade-uz.tar.gz
+          retention-days: 14
