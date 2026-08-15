@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { listCategories } from "@/repositories/products";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function CategoriesPage() {
   const categories = await listCategories();
