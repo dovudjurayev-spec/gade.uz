@@ -7,7 +7,7 @@ export default {
       colors: {
         brand: {
           DEFAULT: "#1a1a1a",
-          accent: "#c9a46b",
+          accent: "#000000",
         },
       },
       fontFamily: {

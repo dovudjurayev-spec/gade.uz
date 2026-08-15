@@ -24,7 +24,7 @@ export default async function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-serif">Мои заказы</h1>
+      <h1 className="text-2xl font-sans">Мои заказы</h1>
       {list.length === 0 ? (
         <p className="text-sm text-neutral-500">Заказов пока нет.</p>
       ) : (

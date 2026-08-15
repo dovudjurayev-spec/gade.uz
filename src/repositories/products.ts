@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, ilike, isNotNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { brandLines, categories, products } from "@/db/schema";
 import type { CategoryNode, ProductDetail, ProductFilters, ProductListItem } from "./types";
@@ -33,6 +33,11 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
   if (filters.onSale) conditions.push(isNotNull(products.oldPriceTiyin));
   if (typeof filters.minTiyin === "number") conditions.push(gte(products.priceTiyin, filters.minTiyin));
   if (typeof filters.maxTiyin === "number") conditions.push(lte(products.priceTiyin, filters.maxTiyin));
+  if (filters.q && filters.q.trim()) {
+    const term = `%${filters.q.trim()}%`;
+    const qCond = or(ilike(products.name, term), ilike(products.sku, term));
+    if (qCond) conditions.push(qCond);
+  }
 
   const orderBy = (() => {
     switch (filters.sort) {

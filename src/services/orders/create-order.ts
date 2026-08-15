@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { customers, orderItems, orders, outboundQueue, products } from "@/db/schema";
 import { normalizePhoneUz } from "@/lib/phone";
+import { processQueue } from "@/services/queue/processor";
 
 const cartLineSchema = z.object({
   productId: z.number().int().positive(),
@@ -165,6 +166,10 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
 
     return { orderId, number };
   });
+
+  // Fire-and-forget: drain queue so Telegram notification is sent immediately
+  // without waiting for cron. Errors are retried by the processor itself.
+  void processQueue().catch((e) => console.error("[create-order] processQueue failed:", e));
 
   return { ok: true, orderId: result.orderId, orderNumber: result.number };
 }

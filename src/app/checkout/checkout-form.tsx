@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { MapPin, Plus, Check, Truck, Package, Store, CreditCard, Banknote, Smartphone, Building2, Navigation, Home, DoorOpen } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useCart, cartSubtotal } from "@/stores/cart";
 import { formatPrice } from "@/lib/money";
 import { submitOrderAction } from "./actions";
@@ -14,17 +16,31 @@ const DELIVERY_COST: Record<string, number> = {
 };
 const FREE_THRESHOLD = 500_000_00;
 
-export function CheckoutForm() {
+type SavedAddress = { id: number; label: string; value: string; isDefault: boolean };
+
+type Props = {
+  initialName?: string;
+  initialPhone?: string;
+  initialAddress?: string;
+  savedAddresses?: SavedAddress[];
+};
+
+export function CheckoutForm({
+  initialName = "",
+  initialPhone = "",
+  initialAddress = "",
+  savedAddresses = [],
+}: Props) {
   const router = useRouter();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
   const subtotal = cartSubtotal(items);
 
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("+998 ");
+  const [name, setName] = useState(initialName);
+  const [phone, setPhone] = useState(initialPhone || "+998 ");
   const [delivery, setDelivery] = useState<"courier_tashkent" | "region_shipping" | "pickup">("courier_tashkent");
   const [payment, setPayment] = useState<"payme" | "click" | "card_on_delivery" | "cash_on_delivery">("payme");
-  const [address, setAddress] = useState("");
+  const [address, setAddress] = useState(initialAddress);
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -103,45 +119,71 @@ export function CheckoutForm() {
         </Field>
 
         <Field label="Доставка">
-          <div className="space-y-2">
-            <Radio name="delivery" value="courier_tashkent" checked={delivery === "courier_tashkent"} onChange={() => setDelivery("courier_tashkent")}>
-              Курьер по Ташкенту — 25 000 сум (бесплатно от 500 000)
-            </Radio>
-            <Radio name="delivery" value="region_shipping" checked={delivery === "region_shipping"} onChange={() => setDelivery("region_shipping")}>
-              Отправка в регион — 45 000 сум
-            </Radio>
-            <Radio name="delivery" value="pickup" checked={delivery === "pickup"} onChange={() => setDelivery("pickup")}>
-              Самовывоз со склада — бесплатно
-            </Radio>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <OptionTile
+              icon={Truck}
+              title="Курьер по Ташкенту"
+              subtitle="25 000 сум · бесплатно от 500 000"
+              checked={delivery === "courier_tashkent"}
+              onSelect={() => setDelivery("courier_tashkent")}
+            />
+            <OptionTile
+              icon={Package}
+              title="В регион"
+              subtitle="45 000 сум"
+              checked={delivery === "region_shipping"}
+              onSelect={() => setDelivery("region_shipping")}
+            />
+            <OptionTile
+              icon={Store}
+              title="Самовывоз"
+              subtitle="Бесплатно, со склада"
+              checked={delivery === "pickup"}
+              onSelect={() => setDelivery("pickup")}
+            />
           </div>
         </Field>
 
         {delivery !== "pickup" && (
           <Field label="Адрес">
-            <input
-              required
+            <AddressPicker
               value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              className="w-full border h-12 px-3"
-              placeholder="Ташкент, Мирабадский р-н, ул. Нукус 12, кв. 5"
+              onChange={setAddress}
+              options={savedAddresses}
             />
           </Field>
         )}
 
         <Field label="Оплата">
-          <div className="space-y-2">
-            <Radio name="payment" value="payme" checked={payment === "payme"} onChange={() => setPayment("payme")}>
-              Payme — онлайн
-            </Radio>
-            <Radio name="payment" value="click" checked={payment === "click"} onChange={() => setPayment("click")}>
-              Click — онлайн
-            </Radio>
-            <Radio name="payment" value="card_on_delivery" checked={payment === "card_on_delivery"} onChange={() => setPayment("card_on_delivery")}>
-              Картой при получении
-            </Radio>
-            <Radio name="payment" value="cash_on_delivery" checked={payment === "cash_on_delivery"} onChange={() => setPayment("cash_on_delivery")}>
-              Наличными при получении
-            </Radio>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <OptionTile
+              icon={Smartphone}
+              title="Payme"
+              subtitle="Онлайн-оплата"
+              checked={payment === "payme"}
+              onSelect={() => setPayment("payme")}
+            />
+            <OptionTile
+              icon={Smartphone}
+              title="Click"
+              subtitle="Онлайн-оплата"
+              checked={payment === "click"}
+              onSelect={() => setPayment("click")}
+            />
+            <OptionTile
+              icon={CreditCard}
+              title="Картой при получении"
+              subtitle="Терминал у курьера"
+              checked={payment === "card_on_delivery"}
+              onSelect={() => setPayment("card_on_delivery")}
+            />
+            <OptionTile
+              icon={Banknote}
+              title="Наличными"
+              subtitle="При получении"
+              checked={payment === "cash_on_delivery"}
+              onSelect={() => setPayment("cash_on_delivery")}
+            />
           </div>
         </Field>
 
@@ -156,7 +198,7 @@ export function CheckoutForm() {
         </Field>
       </div>
 
-      <aside className="border p-6 h-fit sticky top-20 space-y-4">
+      <aside className="md:relative"><div className="border p-6 md:sticky md:top-32 space-y-4">
         <div className="text-sm font-medium">В заказе</div>
         <ul className="space-y-2 text-sm border-b pb-4">
           {items.map((i) => (
@@ -186,7 +228,7 @@ export function CheckoutForm() {
         <p className="text-xs text-neutral-500">
           Нажимая «Оформить заказ», вы соглашаетесь с публичной офертой.
         </p>
-      </aside>
+      </div></aside>
     </form>
   );
 }
@@ -200,15 +242,289 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Radio({
-  name, value, checked, onChange, children,
+function OptionTile({
+  icon: Icon,
+  title,
+  subtitle,
+  checked,
+  onSelect,
 }: {
-  name: string; value: string; checked: boolean; onChange: () => void; children: React.ReactNode;
+  icon: LucideIcon;
+  title: string;
+  subtitle?: string;
+  checked: boolean;
+  onSelect: () => void;
 }) {
   return (
-    <label className="flex items-center gap-3 border p-3 cursor-pointer hover:border-neutral-900 has-[:checked]:border-brand-accent has-[:checked]:bg-brand-accent/5">
-      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} className="accent-brand-accent" />
-      <span className="text-sm">{children}</span>
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`relative text-left border p-4 transition-colors cursor-pointer ${
+        checked
+          ? "border-neutral-900 bg-neutral-50"
+          : "border-neutral-200 hover:border-neutral-400"
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`shrink-0 h-9 w-9 grid place-items-center rounded-full transition-colors ${
+            checked ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
+          }`}
+        >
+          <Icon className="h-4 w-4" strokeWidth={1.5} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium truncate">{title}</div>
+          {subtitle && (
+            <div className="text-xs text-neutral-500 mt-0.5 leading-relaxed line-clamp-2">
+              {subtitle}
+            </div>
+          )}
+        </div>
+        {checked && (
+          <Check className="absolute top-2 right-2 h-4 w-4 text-neutral-900" strokeWidth={2} />
+        )}
+      </div>
+    </button>
+  );
+}
+
+function AddressPicker({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: SavedAddress[];
+}) {
+  const savedMatch = options.find((o) => o.value === value);
+  const [mode, setMode] = useState<"saved" | "custom">(
+    options.length === 0 || (value && !savedMatch) ? "custom" : "saved",
+  );
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (mode === "custom" && !savedMatch) {
+      inputRef.current?.focus();
+    }
+  }, [mode, savedMatch]);
+
+  if (options.length === 0) {
+    return <AddressComposer value={value} onChange={onChange} />;
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((opt) => {
+          const active = mode === "saved" && opt.value === value;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => {
+                setMode("saved");
+                onChange(opt.value);
+              }}
+              className={`group relative text-left border p-4 transition-colors cursor-pointer ${
+                active
+                  ? "border-neutral-900 bg-neutral-50"
+                  : "border-neutral-200 hover:border-neutral-400"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className={`shrink-0 h-9 w-9 grid place-items-center rounded-full transition-colors ${
+                    active ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
+                  }`}
+                >
+                  <MapPin className="h-4 w-4" strokeWidth={1.5} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm font-medium truncate">{opt.label}</span>
+                    {opt.isDefault && (
+                      <span className="shrink-0 text-[10px] uppercase tracking-widest text-neutral-500 border border-neutral-200 px-1.5 py-0.5">
+                        основной
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-neutral-500 leading-relaxed line-clamp-2">
+                    {opt.value}
+                  </div>
+                </div>
+                {active && (
+                  <Check className="absolute top-2 right-2 h-4 w-4 text-neutral-900" strokeWidth={2} />
+                )}
+              </div>
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => {
+            setMode("custom");
+            onChange("");
+          }}
+          className={`group text-left border border-dashed p-4 transition-colors cursor-pointer ${
+            mode === "custom"
+              ? "border-neutral-900 bg-neutral-50"
+              : "border-neutral-300 hover:border-neutral-500"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className={`shrink-0 h-9 w-9 grid place-items-center rounded-full transition-colors ${
+                mode === "custom" ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
+              }`}
+            >
+              <Plus className="h-4 w-4" strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="text-sm font-medium">Другой адрес</div>
+              <div className="text-xs text-neutral-500">Ввести вручную</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {mode === "custom" && (
+        <div className="pt-2">
+          <AddressComposer value={value} onChange={onChange} autoFocusRef={inputRef} />
+        </div>
+      )}
+
+      <div className="flex justify-end pt-1">
+        <Link
+          href="/account/addresses"
+          className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors"
+        >
+          Управлять адресами →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function parseAddress(value: string) {
+  const parts = value.split(",").map((p) => p.trim());
+  const aptIdx = parts.findIndex((p) => /^кв\.?\s*/i.test(p));
+  const apartment = aptIdx >= 0 ? (parts[aptIdx] ?? "").replace(/^кв\.?\s*/i, "").trim() : "";
+  const rest = aptIdx >= 0 ? parts.slice(0, aptIdx) : parts;
+  return {
+    city: rest[0] ?? "",
+    district: rest[1] ?? "",
+    street: rest.slice(2).join(", ") ?? "",
+    apartment,
+  };
+}
+
+function joinAddress(p: { city: string; district: string; street: string; apartment: string }) {
+  const bits = [p.city, p.district, p.street].map((s) => s.trim()).filter(Boolean);
+  if (p.apartment.trim()) bits.push(`кв. ${p.apartment.trim()}`);
+  return bits.join(", ");
+}
+
+function AddressComposer({
+  value,
+  onChange,
+  autoFocusRef,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  autoFocusRef?: React.RefObject<HTMLInputElement | null>;
+}) {
+  const initial = parseAddress(value);
+  const [city, setCity] = useState(initial.city);
+  const [district, setDistrict] = useState(initial.district);
+  const [street, setStreet] = useState(initial.street);
+  const [apartment, setApartment] = useState(initial.apartment);
+
+  function update(next: Partial<{ city: string; district: string; street: string; apartment: string }>) {
+    const merged = { city, district, street, apartment, ...next };
+    setCity(merged.city);
+    setDistrict(merged.district);
+    setStreet(merged.street);
+    setApartment(merged.apartment);
+    onChange(joinAddress(merged));
+  }
+
+  return (
+    <div className="border bg-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200">
+        <ComposerField
+          icon={Building2}
+          label="Город"
+          placeholder="Ташкент"
+          value={city}
+          onChange={(v) => update({ city: v })}
+          inputRef={autoFocusRef}
+          required
+        />
+        <ComposerField
+          icon={Navigation}
+          label="Район"
+          placeholder="Мирабадский"
+          value={district}
+          onChange={(v) => update({ district: v })}
+        />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border-t border-neutral-200">
+        <ComposerField
+          icon={Home}
+          label="Улица и дом"
+          placeholder="ул. Нукус 12"
+          value={street}
+          onChange={(v) => update({ street: v })}
+          required
+        />
+        <ComposerField
+          icon={DoorOpen}
+          label="Квартира"
+          placeholder="5"
+          value={apartment}
+          onChange={(v) => update({ apartment: v })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ComposerField({
+  icon: Icon,
+  label,
+  placeholder,
+  value,
+  onChange,
+  inputRef,
+  required,
+}: {
+  icon: LucideIcon;
+  label: string;
+  placeholder: string;
+  value: string;
+  onChange: (v: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+  required?: boolean;
+}) {
+  return (
+    <label className="group flex items-center gap-3 px-4 py-3 focus-within:bg-neutral-50 transition-colors cursor-text">
+      <div className="shrink-0 h-8 w-8 grid place-items-center rounded-full bg-neutral-100 text-neutral-500 group-focus-within:bg-neutral-900 group-focus-within:text-white transition-colors">
+        <Icon className="h-4 w-4" strokeWidth={1.5} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase tracking-widest text-neutral-500">{label}</div>
+        <input
+          ref={inputRef}
+          required={required}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="w-full bg-transparent text-sm focus:outline-none placeholder:text-neutral-300"
+        />
+      </div>
     </label>
   );
 }

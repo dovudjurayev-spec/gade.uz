@@ -59,10 +59,10 @@ async function seed() {
     ["gade-pure-serum-30", "PUR-SR-30", "GADE Pure Serum", "face", "pure", "30 мл", 62_000_00, 74_000_00, 9, false],
     ["gade-hydra-body-lotion-300", "HYD-BL-300", "GADE Hydra Body Lotion", "body", "hydra", "300 мл", 26_000_00, null, 20, false],
     ["gade-repair-body-oil-100", "REP-BO-100", "GADE Repair Body Oil", "body", "repair", "100 мл", 42_000_00, null, 11, true],
-    ["gade-set-hair-duo", "SET-HR-DUO", "Набор GADE Hair Duo", "sets", "hydra", "шампунь + маска", 38_000_00, 46_500_00, 15, true],
-    ["gade-set-repair-trio", "SET-RP-TRIO", "Набор GADE Repair Trio", "sets", "repair", "шампунь + маска + сыворотка", 78_000_00, 95_000_00, 7, true],
-    ["gade-set-face-basic", "SET-FC-BSC", "Набор GADE Face Basic", "sets", "pure", "очищение + тоник + крем", 82_000_00, null, 10, false],
-    ["gade-set-gift-luxe", "SET-GFT-LUX", "Подарочный набор GADE Luxe", "sets", "repair", "премиум-набор", 145_000_00, 175_000_00, 4, true],
+    ["gade-set-hair-duo", "SET-HR-DUO", "Набор GADE Hair Duo", "sets", "hydra", "Набор", 38_000_00, 46_500_00, 15, true],
+    ["gade-set-repair-trio", "SET-RP-TRIO", "Набор GADE Repair Trio", "sets", "repair", "Набор", 78_000_00, 95_000_00, 7, true],
+    ["gade-set-face-basic", "SET-FC-BSC", "Набор GADE Face Basic", "sets", "pure", "Набор", 82_000_00, null, 10, false],
+    ["gade-set-gift-luxe", "SET-GFT-LUX", "Подарочный набор GADE Luxe", "sets", "repair", "Набор", 145_000_00, 175_000_00, 4, true],
   ] as const;
 
   await db.insert(products).values(

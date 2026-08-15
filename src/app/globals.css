@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #1a1a1a;
@@ -19,6 +24,7 @@ html, body {
     @apply font-sans text-base leading-relaxed;
   }
   h1, h2, h3 {
-    @apply font-semibold tracking-tight;
+    @apply font-medium tracking-tight;
   }
 }
+

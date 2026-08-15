@@ -20,7 +20,7 @@ export default async function FavoritesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-serif">Избранное</h1>
+      <h1 className="text-2xl font-sans">Избранное</h1>
       {favRows.length === 0 ? (
         <p className="text-sm text-neutral-500">Пока пусто. <Link href="/catalog" className="underline">В каталог</Link></p>
       ) : (

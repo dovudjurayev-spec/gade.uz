@@ -2,15 +2,35 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/money";
 import type { ProductListItem } from "@/repositories/types";
 import { cn } from "@/lib/cn";
+import { CardCartButton } from "./card-cart-button";
+import { FavoriteButton } from "./favorite-button";
+
+function splitTwoLines(text: string): [string, string] {
+  const words = text.trim().split(/\s+/);
+  if (words.length <= 1) return [text, ""];
+  let best = 1;
+  let bestDiff = Infinity;
+  for (let i = 1; i < words.length; i++) {
+    const a = words.slice(0, i).join(" ").length;
+    const b = words.slice(i).join(" ").length;
+    const diff = Math.abs(a - b);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      best = i;
+    }
+  }
+  return [words.slice(0, best).join(" "), words.slice(best).join(" ")];
+}
 
 export function ProductCard({ product }: { product: ProductListItem }) {
   const outOfStock = product.stock <= 0;
   const onSale = product.oldPriceTiyin && product.oldPriceTiyin > product.priceTiyin;
+  const [line1, line2] = splitTwoLines(product.name);
 
   return (
     <Link
       href={`/catalog/${product.slug}`}
-      className="group block border border-neutral-200 hover:border-neutral-900 transition-colors"
+      className="group flex h-full flex-col border border-neutral-200 hover:border-neutral-900 transition-colors"
     >
       <div className="relative aspect-square bg-neutral-100 overflow-hidden">
         {product.image ? (
@@ -30,27 +50,43 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           {onSale && <Badge tone="accent">Скидка</Badge>}
           {outOfStock && <Badge tone="muted">Нет в наличии</Badge>}
         </div>
+
+        <FavoriteButton productId={product.id} className="absolute top-2 right-2" />
       </div>
 
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-4">
         {product.brandLine && (
           <div className="text-xs uppercase tracking-widest text-neutral-500 mb-1">
             {product.brandLine}
           </div>
         )}
-        <div className="text-sm font-medium leading-snug min-h-[2.5rem]">{product.name}</div>
-        {product.volume && (
-          <div className="text-xs text-neutral-500 mt-1">{product.volume}</div>
-        )}
-        <div className="mt-3 flex items-baseline gap-2">
-          <span className={cn("font-sans font-semibold", outOfStock && "text-neutral-400")}>
+        <div className="text-sm font-medium leading-snug min-h-[2.5rem]">
+          <span className="block truncate">{line1}</span>
+          <span className="block truncate">{line2 || "\u00A0"}</span>
+        </div>
+        <div className="text-xs text-neutral-500 mt-0.5 min-h-[1rem]">
+          {product.volume ?? ""}
+        </div>
+        <div className="mt-2 flex flex-col">
+          <span className={cn("font-sans font-semibold whitespace-nowrap", outOfStock && "text-neutral-400")}>
             {formatPrice(product.priceTiyin)}
           </span>
-          {onSale && (
-            <span className="text-xs text-neutral-400 line-through">
-              {formatPrice(product.oldPriceTiyin!)}
-            </span>
-          )}
+          <span className="text-xs text-neutral-400 line-through whitespace-nowrap min-h-[1rem]">
+            {onSale ? formatPrice(product.oldPriceTiyin!) : ""}
+          </span>
+        </div>
+        <div className="mt-auto pt-3">
+          <CardCartButton
+            product={{
+              id: product.id,
+              slug: product.slug,
+              name: product.name,
+              priceTiyin: product.priceTiyin,
+              image: product.image,
+              volume: product.volume,
+            }}
+            disabled={outOfStock}
+          />
         </div>
       </div>
     </Link>

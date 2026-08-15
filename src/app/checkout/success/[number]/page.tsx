@@ -5,6 +5,7 @@ import { db } from "@/db/client";
 import { orders } from "@/db/schema";
 import { formatPrice } from "@/lib/money";
 import { formatPhoneUz } from "@/lib/phone";
+import { ClearCart } from "../clear-cart";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function SuccessPage({ params }: { params: Params }) {
 
   return (
     <div className="mx-auto max-w-2xl px-4 md:px-8 py-16 text-center">
+      <ClearCart />
       <div className="text-6xl mb-4">✓</div>
       <h1 className="text-3xl md:text-4xl mb-3">Спасибо за заказ!</h1>
       <p className="text-neutral-600 mb-8">

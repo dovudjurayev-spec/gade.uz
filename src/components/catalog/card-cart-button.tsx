@@ -15,7 +15,7 @@ type Props = {
   disabled?: boolean;
 };
 
-export function AddToCartButton({ product, disabled }: Props) {
+export function CardCartButton({ product, disabled }: Props) {
   const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
   const setQuantity = useCart((s) => s.setQuantity);
@@ -23,12 +23,17 @@ export function AddToCartButton({ product, disabled }: Props) {
   const item = items.find((i) => i.productId === product.id);
   const qty = item?.quantity ?? 0;
 
+  function stop(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
   if (disabled) {
     return (
       <button
         type="button"
         disabled
-        className="w-full md:w-auto min-h-[52px] px-10 text-sm uppercase tracking-widest border border-neutral-200 text-neutral-400 cursor-not-allowed"
+        className="w-full h-10 text-xs uppercase tracking-widest border border-neutral-200 text-neutral-400 cursor-not-allowed"
       >
         Нет в наличии
       </button>
@@ -39,7 +44,8 @@ export function AddToCartButton({ product, disabled }: Props) {
     return (
       <button
         type="button"
-        onClick={() =>
+        onClick={(e) => {
+          stop(e);
           add({
             productId: product.id,
             slug: product.slug,
@@ -47,9 +53,9 @@ export function AddToCartButton({ product, disabled }: Props) {
             priceTiyin: product.priceTiyin,
             image: product.image,
             volume: product.volume,
-          })
-        }
-        className="w-full md:w-auto min-h-[52px] px-10 inline-flex items-center justify-center gap-2 bg-neutral-900 text-white text-sm uppercase tracking-widest hover:bg-neutral-800 transition-colors"
+          });
+        }}
+        className="w-full h-10 inline-flex items-center justify-center gap-2 text-xs uppercase tracking-widest bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
       >
         <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
         В корзину
@@ -58,20 +64,26 @@ export function AddToCartButton({ product, disabled }: Props) {
   }
 
   return (
-    <div className="w-full md:w-[260px] min-h-[52px] grid grid-cols-3 items-stretch border border-neutral-900">
+    <div className="w-full h-10 grid grid-cols-3 items-stretch border border-neutral-900">
       <button
         type="button"
         aria-label="Уменьшить"
-        onClick={() => setQuantity(product.id, qty - 1)}
+        onClick={(e) => {
+          stop(e);
+          setQuantity(product.id, qty - 1);
+        }}
         className="grid place-items-center hover:bg-neutral-100 transition-colors"
       >
         <Minus className="h-4 w-4" strokeWidth={1.5} />
       </button>
-      <div className="grid place-items-center text-base font-medium select-none">{qty}</div>
+      <div className="grid place-items-center text-sm font-medium select-none">{qty}</div>
       <button
         type="button"
         aria-label="Увеличить"
-        onClick={() => setQuantity(product.id, qty + 1)}
+        onClick={(e) => {
+          stop(e);
+          setQuantity(product.id, qty + 1);
+        }}
         className="grid place-items-center hover:bg-neutral-100 transition-colors"
       >
         <Plus className="h-4 w-4" strokeWidth={1.5} />

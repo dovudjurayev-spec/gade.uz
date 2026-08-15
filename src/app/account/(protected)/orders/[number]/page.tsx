@@ -41,7 +41,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ nu
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-serif">Заказ № {order.number}</h1>
+        <h1 className="text-2xl font-sans">Заказ № {order.number}</h1>
         <div className="text-sm text-neutral-500 mt-1">
           {new Date(order.createdAt).toLocaleString("ru-RU")} · {STATUS[order.status] ?? order.status}
         </div>
@@ -77,9 +77,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ nu
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <div className="flex justify-between">
-      <span className="text-neutral-500">{label}</span>
-      <span className={bold ? "font-medium" : ""}>{value}</span>
+    <div className="flex justify-between gap-4">
+      <span className="text-neutral-500 shrink-0">{label}</span>
+      <span className={`text-right break-words ${bold ? "font-medium" : ""}`}>{value}</span>
     </div>
   );
 }

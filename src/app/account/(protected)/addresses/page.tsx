@@ -14,7 +14,7 @@ export default async function AddressesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-serif">Мои адреса</h1>
+      <h1 className="text-2xl font-sans">Мои адреса</h1>
 
       {list.length > 0 && (
         <div className="space-y-3">
