@@ -1,15 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getAllProductSlugs, getProductBySlug } from "@/repositories/products";
+import { getProductBySlug } from "@/repositories/products";
 import { formatPrice } from "@/lib/money";
 import { AddToCartButton } from "@/components/catalog/add-to-cart-button";
 
-export const revalidate = 300;
-
-export async function generateStaticParams() {
-  const slugs = await getAllProductSlugs().catch(() => [] as string[]);
-  return slugs.map((slug) => ({ slug }));
-}
+export const dynamic = "force-dynamic";
 
 type Params = Promise<{ slug: string }>;
 

@@ -5,7 +5,7 @@ import { listCategories, getFeaturedProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
 import { HeroPromoCarousel } from "@/components/home/hero-promo-carousel";
 
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [categories, bestSellers] = await Promise.all([

@@ -3,7 +3,7 @@ import { ProductCard } from "@/components/catalog/product-card";
 import Link from "next/link";
 import { Check, TrendingUp, ArrowDownUp, X, Package, Percent, Zap } from "lucide-react";
 
-export const revalidate = 300; // 5 min ISR
+export const dynamic = "force-dynamic";
 
 type Sort = "popular" | "new" | "price_asc" | "price_desc";
 
