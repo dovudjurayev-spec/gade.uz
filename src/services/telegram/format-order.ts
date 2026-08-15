@@ -60,9 +60,10 @@ export function formatOrderMessage(order: Order, items: OrderItem[]): string {
 export function orderKeyboard(orderId: number, phone: string, appUrl: string) {
   void phone;
   const isPublic = /^https:\/\//.test(appUrl);
-  const rows: { text: string; callback_data?: string; url?: string }[][] = [
-    [{ text: "Принять в работу", callback_data: `accept:${orderId}` }],
-  ];
+  const rows: (
+    | { text: string; url: string }
+    | { text: string; callback_data: string }
+  )[][] = [[{ text: "Принять в работу", callback_data: `accept:${orderId}` }]];
   if (isPublic) {
     rows.push([{ text: "В админке", url: `${appUrl}/admin/orders/${orderId}` }]);
   }

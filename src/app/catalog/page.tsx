@@ -55,7 +55,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
   const saleOn = sp.sale === "1";
   const hasActiveFilters = activeCategory || stockOn || saleOn || sp.sort;
 
-  const sortLabels: Record<Sort, { label: string; icon: typeof Sparkles }> = {
+  const sortLabels: Record<Sort, { label: string; icon: typeof Zap }> = {
     popular: { label: "Популярные", icon: TrendingUp },
     new: { label: "Новинки", icon: Zap },
     price_asc: { label: "Цена ↑", icon: ArrowDownUp },

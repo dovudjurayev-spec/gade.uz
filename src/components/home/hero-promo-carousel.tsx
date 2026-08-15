@@ -20,7 +20,7 @@ export function HeroPromoCarousel({ products }: { products: ProductListItem[] })
 
   if (items.length === 0) return null;
 
-  const p = items[index];
+  const p = items[index]!;
   const onSale = p.oldPriceTiyin && p.oldPriceTiyin > p.priceTiyin;
   const discount = onSale
     ? Math.round(((p.oldPriceTiyin! - p.priceTiyin) / p.oldPriceTiyin!) * 100)
