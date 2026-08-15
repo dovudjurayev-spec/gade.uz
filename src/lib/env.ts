@@ -2,7 +2,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().url().default("postgresql://build:build@localhost:5432/build"),
   APP_URL: z.string().url().default("https://gade.uz"),
 
   CRON_TOKEN: z.string().min(16).optional(),
