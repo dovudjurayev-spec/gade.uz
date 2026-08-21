@@ -10,6 +10,7 @@ import {
 
 const PAGE_SIZE = 100;
 const IMAGES_DIR = join(process.cwd(), "public", "products");
+const SKIP_IMAGES = process.env.VERCEL === "1" || process.env.SKIP_IMAGE_DOWNLOAD === "1";
 
 function slugify(input: string): string {
   const map: Record<string, string> = {
@@ -98,7 +99,9 @@ export async function syncBillzCatalog(): Promise<SyncResult> {
   const shopId = process.env.BILLZ_SHOP_ID;
   if (!shopId) throw new Error("BILLZ_SHOP_ID is not set");
 
-  await mkdir(IMAGES_DIR, { recursive: true });
+  if (!SKIP_IMAGES) {
+    try { await mkdir(IMAGES_DIR, { recursive: true }); } catch {}
+  }
 
   const result: SyncResult = {
     totalFromBillz: 0,
@@ -181,23 +184,25 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   const brandLineId = await ensureBrand(p.brand_id, p.brand_name);
 
   const imgs: string[] = [];
-  const mainImg = p.main_image_url_full;
-  if (mainImg) {
-    const local = await downloadImage(mainImg, p.id, 0);
-    if (local) {
-      imgs.push(local);
-      result.imagesDownloaded += 1;
+  if (!SKIP_IMAGES) {
+    const mainImg = p.main_image_url_full;
+    if (mainImg) {
+      const local = await downloadImage(mainImg, p.id, 0);
+      if (local) {
+        imgs.push(local);
+        result.imagesDownloaded += 1;
+      }
     }
-  }
-  const photoList = p.photos ?? [];
-  for (let i = 0; i < photoList.length; i++) {
-    const photo = photoList[i];
-    const url = photo?.photo_url_full ?? photo?.photo_url;
-    if (!url || url === mainImg) continue;
-    const local = await downloadImage(url, p.id, i + 1);
-    if (local) {
-      imgs.push(local);
-      result.imagesDownloaded += 1;
+    const photoList = p.photos ?? [];
+    for (let i = 0; i < photoList.length; i++) {
+      const photo = photoList[i];
+      const url = photo?.photo_url_full ?? photo?.photo_url;
+      if (!url || url === p.main_image_url_full) continue;
+      const local = await downloadImage(url, p.id, i + 1);
+      if (local) {
+        imgs.push(local);
+        result.imagesDownloaded += 1;
+      }
     }
   }
 
