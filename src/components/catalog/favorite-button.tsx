@@ -29,10 +29,10 @@ export function FavoriteButton({ productId, className = "" }: { productId: numbe
       disabled={pending}
       aria-label={isFav ? "Убрать из избранного" : "В избранное"}
       aria-pressed={isFav}
-      className={`grid place-items-center h-9 w-9 rounded-full bg-white/90 backdrop-blur border border-neutral-200 hover:border-neutral-900 transition-colors cursor-pointer ${className}`}
+      className={`group/fav grid place-items-center h-9 w-9 rounded-full bg-white/90 backdrop-blur border border-neutral-200 hover:border-brand-accent hover:scale-110 transition-all cursor-pointer ${className}`}
     >
       <Heart
-        className={`h-4 w-4 transition-colors ${isFav ? "fill-red-500 text-red-500" : "text-neutral-700"}`}
+        className={`h-4 w-4 transition-all ${isFav ? "fill-brand-accent text-brand-accent scale-110" : "text-neutral-700 group-hover/fav:text-brand-accent"}`}
         strokeWidth={1.5}
       />
     </button>

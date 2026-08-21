@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte, ilike, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, ilike, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { brandLines, categories, products } from "@/db/schema";
 import type { CategoryNode, ProductDetail, ProductFilters, ProductListItem } from "./types";
@@ -9,7 +9,7 @@ function firstImage(images: string[] | null | undefined): string | null {
 }
 
 export async function listProducts(filters: ProductFilters = {}): Promise<ProductListItem[]> {
-  const conditions = [eq(products.isVisible, true)];
+  const conditions = [eq(products.isVisible, true), isNull(products.deletedAt)];
 
   if (filters.categorySlug) {
     const cat = await db.query.categories.findFirst({
@@ -114,7 +114,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     .from(products)
     .leftJoin(categories, eq(products.categoryId, categories.id))
     .leftJoin(brandLines, eq(products.brandLineId, brandLines.id))
-    .where(and(eq(products.slug, slug), eq(products.isVisible, true)))
+    .where(and(eq(products.slug, slug), eq(products.isVisible, true), isNull(products.deletedAt)))
     .limit(1);
 
   const p = row[0];
@@ -135,14 +135,41 @@ export async function getAllProductSlugs(): Promise<string[]> {
   const rows = await db
     .select({ slug: products.slug })
     .from(products)
-    .where(eq(products.isVisible, true));
+    .where(and(eq(products.isVisible, true), isNull(products.deletedAt)));
   return rows.map((r) => r.slug);
 }
 
 export async function countProducts(filters: ProductFilters = {}): Promise<number> {
-  const conditions = [eq(products.isVisible, true)];
+  const conditions = [eq(products.isVisible, true), isNull(products.deletedAt)];
+
+  if (filters.categorySlug) {
+    const cat = await db.query.categories.findFirst({
+      where: eq(categories.slug, filters.categorySlug),
+      columns: { id: true },
+    });
+    if (!cat) return 0;
+    conditions.push(eq(products.categoryId, cat.id));
+  }
+
+  if (filters.brandLineSlug) {
+    const line = await db.query.brandLines.findFirst({
+      where: eq(brandLines.slug, filters.brandLineSlug),
+      columns: { id: true },
+    });
+    if (!line) return 0;
+    conditions.push(eq(products.brandLineId, line.id));
+  }
+
   if (filters.inStock) conditions.push(gt(products.stock, 0));
   if (filters.onSale) conditions.push(isNotNull(products.oldPriceTiyin));
+  if (typeof filters.minTiyin === "number") conditions.push(gte(products.priceTiyin, filters.minTiyin));
+  if (typeof filters.maxTiyin === "number") conditions.push(lte(products.priceTiyin, filters.maxTiyin));
+  if (filters.q && filters.q.trim()) {
+    const term = `%${filters.q.trim()}%`;
+    const qCond = or(ilike(products.name, term), ilike(products.sku, term));
+    if (qCond) conditions.push(qCond);
+  }
+
   const [row] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(products)

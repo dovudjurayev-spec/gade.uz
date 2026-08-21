@@ -21,6 +21,10 @@ npm-debug.log*
 
 # uploads (production)
 uploads/
+public/products/
+
+# claude
+.claude/
 
 # drizzle (keep migrations, ignore cache)
 src/db/migrations/meta/_journal.tmp

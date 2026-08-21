@@ -12,9 +12,7 @@ const db = drizzle(sql, { schema });
 
 async function seed() {
   console.log("Wiping catalog tables...");
-  await db.delete(products);
-  await db.delete(brandLines);
-  await db.delete(categories);
+  await sql`TRUNCATE TABLE products, brand_lines, categories, order_items, orders, favorites, payment_transactions RESTART IDENTITY CASCADE`;
 
   console.log("Seeding categories...");
   const cats = await db
@@ -37,6 +35,7 @@ async function seed() {
       { slug: "repair", name: "GADE Repair", description: "Глубокое восстановление" },
       { slug: "color", name: "GADE Color Care", description: "Защита цвета" },
       { slug: "pure", name: "GADE Pure", description: "Для чувствительной кожи" },
+      { slug: "vanilla-black", name: "Vanilla Black", description: "Тёплый шлейф ванили — мист, крем и гель для душа" },
     ])
     .returning();
   const lineBySlug = Object.fromEntries(lines.map((l) => [l.slug, l]));
@@ -63,6 +62,10 @@ async function seed() {
     ["gade-set-repair-trio", "SET-RP-TRIO", "Набор GADE Repair Trio", "sets", "repair", "Набор", 78_000_00, 95_000_00, 7, true],
     ["gade-set-face-basic", "SET-FC-BSC", "Набор GADE Face Basic", "sets", "pure", "Набор", 82_000_00, null, 10, false],
     ["gade-set-gift-luxe", "SET-GFT-LUX", "Подарочный набор GADE Luxe", "sets", "repair", "Набор", 145_000_00, 175_000_00, 4, true],
+    ["vanilla-black-body-mist-200", "VB-MST-200", "Vanilla Black Body Mist", "body", "vanilla-black", "200 мл", 24_000_00, 32_000_00, 40, true],
+    ["vanilla-black-body-cream-250", "VB-CRM-250", "Vanilla Black Body Cream", "body", "vanilla-black", "250 мл", 28_000_00, 36_000_00, 32, true],
+    ["vanilla-black-shower-gel-300", "VB-SHG-300", "Vanilla Black Shower Gel", "body", "vanilla-black", "300 мл", 22_000_00, 28_000_00, 45, true],
+    ["vanilla-black-set-trio", "VB-SET-TRIO", "Набор Vanilla Black Trio", "sets", "vanilla-black", "Набор", 62_000_00, 84_000_00, 18, true],
   ] as const;
 
   await db.insert(products).values(

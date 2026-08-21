@@ -1,9 +1,11 @@
-import { listProducts, listCategories } from "@/repositories/products";
+import { listProducts, listCategories, countProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
 import Link from "next/link";
-import { Check, TrendingUp, ArrowDownUp, X, Package, Percent, Zap } from "lucide-react";
+import { Check, TrendingUp, ArrowDownUp, X, Package, Percent, Zap, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+const PAGE_SIZE = 48;
 
 type Sort = "popular" | "new" | "price_asc" | "price_desc";
 
@@ -14,40 +16,52 @@ type SearchParams = Promise<{
   stock?: string;
   sale?: string;
   q?: string;
+  page?: string;
 }>;
 
 function buildHref(
-  sp: { category?: string; sort?: Sort; stock?: string; sale?: string; q?: string },
-  patch: Partial<{ category?: string | null; sort?: Sort | null; stock?: boolean; sale?: boolean }>,
+  sp: { category?: string; sort?: Sort; stock?: string; sale?: string; q?: string; page?: string },
+  patch: Partial<{ category?: string | null; sort?: Sort | null; stock?: boolean; sale?: boolean; page?: number | null }>,
 ) {
   const params = new URLSearchParams();
   const category = patch.category === undefined ? sp.category : patch.category ?? undefined;
   const sort = patch.sort === undefined ? sp.sort : patch.sort ?? undefined;
   const stock = patch.stock === undefined ? sp.stock === "1" : patch.stock;
   const sale = patch.sale === undefined ? sp.sale === "1" : patch.sale;
+  const resetsPage = "category" in patch || "sort" in patch || "stock" in patch || "sale" in patch;
+  const page = patch.page !== undefined
+    ? (patch.page == null ? undefined : String(patch.page))
+    : resetsPage
+    ? undefined
+    : sp.page;
 
   if (category) params.set("category", category);
   if (sort) params.set("sort", sort);
   if (stock) params.set("stock", "1");
   if (sale) params.set("sale", "1");
   if (sp.q) params.set("q", sp.q);
+  if (page && page !== "1") params.set("page", page);
   const qs = params.toString();
   return qs ? `/catalog?${qs}` : "/catalog";
 }
 
 export default async function CatalogPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const [products, cats] = await Promise.all([
-    listProducts({
-      categorySlug: sp.category,
-      brandLineSlug: sp.line,
-      sort: sp.sort,
-      inStock: sp.stock === "1",
-      onSale: sp.sale === "1",
-      q: sp.q,
-    }),
+  const pageNum = Math.max(1, Number(sp.page) || 1);
+  const filters = {
+    categorySlug: sp.category,
+    brandLineSlug: sp.line,
+    sort: sp.sort,
+    inStock: sp.stock === "1",
+    onSale: sp.sale === "1",
+    q: sp.q,
+  };
+  const [products, cats, total] = await Promise.all([
+    listProducts({ ...filters, limit: PAGE_SIZE, offset: (pageNum - 1) * PAGE_SIZE }),
     listCategories(),
+    countProducts(filters),
   ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const activeSort: Sort = sp.sort ?? "popular";
   const activeCategory = sp.category ?? "";
@@ -75,8 +89,12 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
           </h1>
         </div>
         <div className="text-sm text-neutral-500">
-          {products.length}{" "}
-          {products.length === 1 ? "товар" : products.length < 5 && products.length !== 0 ? "товара" : "товаров"}
+          {total}{" "}
+          {total % 10 === 1 && total % 100 !== 11
+            ? "товар"
+            : [2, 3, 4].includes(total % 10) && ![12, 13, 14].includes(total % 100)
+            ? "товара"
+            : "товаров"}
         </div>
       </div>
 
@@ -164,13 +182,101 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+          {totalPages > 1 && (
+            <Pagination current={pageNum} total={totalPages} buildPageHref={(n) => buildHref(sp, { page: n })} />
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+function Pagination({
+  current,
+  total,
+  buildPageHref,
+}: {
+  current: number;
+  total: number;
+  buildPageHref: (n: number) => string;
+}) {
+  const pages: (number | "...")[] = [];
+  const push = (v: number | "...") => {
+    if (pages[pages.length - 1] !== v) pages.push(v);
+  };
+  push(1);
+  for (let i = current - 1; i <= current + 1; i++) {
+    if (i > 1 && i < total) {
+      if (i > 2 && pages[pages.length - 1] !== i - 1) push("...");
+      push(i);
+    }
+  }
+  if (total > 1) {
+    if (current + 1 < total - 1) push("...");
+    push(total);
+  }
+
+  const linkBase =
+    "inline-flex items-center justify-center h-10 min-w-10 px-3 text-sm border transition-colors";
+
+  return (
+    <nav className="mt-12 flex items-center justify-center gap-1" aria-label="Пагинация">
+      {current > 1 ? (
+        <Link
+          href={buildPageHref(current - 1)}
+          className={`${linkBase} border-neutral-200 text-neutral-700 hover:border-neutral-900`}
+          aria-label="Предыдущая страница"
+        >
+          <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+        </Link>
+      ) : (
+        <span className={`${linkBase} border-neutral-100 text-neutral-300 cursor-not-allowed`} aria-hidden>
+          <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
+        </span>
+      )}
+      {pages.map((p, idx) =>
+        p === "..." ? (
+          <span key={`gap-${idx}`} className="px-2 text-neutral-400">
+            …
+          </span>
+        ) : p === current ? (
+          <span
+            key={p}
+            className={`${linkBase} border-neutral-900 bg-neutral-900 text-white`}
+            aria-current="page"
+          >
+            {p}
+          </span>
+        ) : (
+          <Link
+            key={p}
+            href={buildPageHref(p)}
+            className={`${linkBase} border-neutral-200 text-neutral-700 hover:border-neutral-900`}
+          >
+            {p}
+          </Link>
+        ),
+      )}
+      {current < total ? (
+        <Link
+          href={buildPageHref(current + 1)}
+          className={`${linkBase} border-neutral-200 text-neutral-700 hover:border-neutral-900`}
+          aria-label="Следующая страница"
+        >
+          <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+        </Link>
+      ) : (
+        <span className={`${linkBase} border-neutral-100 text-neutral-300 cursor-not-allowed`} aria-hidden>
+          <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
+        </span>
+      )}
+    </nav>
   );
 }
 

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   serial,
@@ -105,6 +106,10 @@ export const products = pgTable(
     isFeatured: boolean("is_featured").notNull().default(false),
     isNew: boolean("is_new").notNull().default(false),
     images: jsonb("images").$type<string[]>().notNull().default([]),
+    billzId: varchar("billz_id", { length: 64 }),
+    barcode: varchar("barcode", { length: 64 }),
+    billzUpdatedAt: timestamp("billz_updated_at", { withTimezone: true }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -114,6 +119,9 @@ export const products = pgTable(
     categoryIdx: index("products_category_idx").on(t.categoryId),
     brandLineIdx: index("products_brand_line_idx").on(t.brandLineId),
     visibleIdx: index("products_visible_idx").on(t.isVisible),
+    billzIdx: uniqueIndex("products_billz_id_idx").on(t.billzId),
+    barcodeIdx: index("products_barcode_idx").on(t.barcode),
+    deletedIdx: index("products_deleted_idx").on(t.deletedAt),
   }),
 );
 
@@ -133,17 +141,25 @@ export const customers = pgTable(
   }),
 );
 
-export const customerAddresses = pgTable("customer_addresses", {
-  id: serial("id").primaryKey(),
-  customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
-  label: varchar("label", { length: 100 }),
-  city: varchar("city", { length: 100 }).notNull(),
-  district: varchar("district", { length: 100 }),
-  street: varchar("street", { length: 300 }).notNull(),
-  apartment: varchar("apartment", { length: 50 }),
-  comment: text("comment"),
-  isDefault: boolean("is_default").notNull().default(false),
-});
+export const customerAddresses = pgTable(
+  "customer_addresses",
+  {
+    id: serial("id").primaryKey(),
+    customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    label: varchar("label", { length: 100 }),
+    city: varchar("city", { length: 100 }).notNull(),
+    district: varchar("district", { length: 100 }),
+    street: varchar("street", { length: 300 }).notNull(),
+    apartment: varchar("apartment", { length: 50 }),
+    comment: text("comment"),
+    isDefault: boolean("is_default").notNull().default(false),
+  },
+  (t) => ({
+    defaultUniq: uniqueIndex("customer_addresses_default_uniq")
+      .on(t.customerId)
+      .where(sql`${t.isDefault} = true`),
+  }),
+);
 
 export const otpCodes = pgTable(
   "otp_codes",

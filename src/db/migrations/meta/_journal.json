@@ -8,6 +8,20 @@
       "when": 1786450753501,
       "tag": "0000_early_princess_powerful",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787343973183,
+      "tag": "0001_little_magdalene",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787346112825,
+      "tag": "0002_lying_trauma",
+      "breakpoints": true
     }
   ]
 }

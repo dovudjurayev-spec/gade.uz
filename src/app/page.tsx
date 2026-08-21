@@ -1,84 +1,132 @@
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowRight } from "lucide-react";
-import { listCategories, getFeaturedProducts } from "@/repositories/products";
+import { ArrowRight, Truck, ShieldCheck, Gift } from "lucide-react";
+import { listCategories, getFeaturedProducts, listProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
-import { HeroPromoCarousel } from "@/components/home/hero-promo-carousel";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, bestSellers] = await Promise.all([
+  const [categories, bestSellers, vanillaBlack] = await Promise.all([
     listCategories().then((c) => c.slice(0, 4)),
     getFeaturedProducts(8),
+    listProducts({ brandLineSlug: "vanilla-black", limit: 4 }),
   ]);
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative border-b overflow-hidden min-h-[calc(100vh-112px)] flex flex-col justify-center">
-        <Image
-          src="/hero-mobile.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-bottom md:hidden"
-        />
-        <Image
-          src="/hero.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center hidden md:block"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
-        <div className="relative mx-auto max-w-4xl px-4 md:px-8 pt-28 md:pt-40 text-center">
-          <span className="inline-block text-[11px] uppercase tracking-[0.2em] text-white/70 mb-4">
-            — Новая коллекция
+      {/* Hero — mobile: stacked; desktop: split side-by-side */}
+      <section className="border-b border-neutral-100 bg-white md:grid md:grid-cols-2 md:min-h-[calc(100vh-112px)]">
+        {/* Content */}
+        <div className="flex flex-col justify-center px-4 md:pr-8 lg:pr-12 pt-12 md:py-16 pb-10 md:order-1 md:pl-[max(2rem,calc((100vw-80rem)/2+2rem))]">
+          <span className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-5 block">
+            Новая коллекция · Скидка до 30%
           </span>
-          <h1 className="text-3xl md:text-5xl font-light leading-[1.1] tracking-tight mb-4 text-white">
-            <span className="md:hidden">GA-DE у вас дома</span>
-            <span className="hidden md:inline">Профессиональный уход GADE — теперь у вас дома</span>
+          <h1 className="text-4xl md:text-6xl font-light leading-[1.05] tracking-tight text-neutral-900 mb-6">
+            Vanilla Black — новая коллекция
           </h1>
-          <p className="text-base text-white/80 mb-6 max-w-xl mx-auto leading-relaxed">
-            Оригинальная косметика напрямую от бренда. Быстрая доставка по Ташкенту и в регионы, удобная оплата.
+          <p className="text-base md:text-lg text-neutral-600 mb-8 max-w-md leading-relaxed">
+            Мист для тела, крем и гель для душа — единая линейка с тёплым шлейфом ванили. Ритуал ухода, объединённый одним ароматом. Знакомство со скидкой до 30%.
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
+          <div className="flex flex-wrap gap-3">
             <Link
               href="/catalog"
-              className="inline-flex items-center gap-2 bg-white text-neutral-900 px-7 py-3 text-sm hover:bg-neutral-100 transition-colors"
+              className="group inline-flex items-center gap-2 bg-neutral-900 text-white px-7 py-3.5 text-sm hover:bg-neutral-700 transition-colors"
             >
               В каталог
-              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
             <Link
               href="/catalog?sale=1"
-              className="inline-flex items-center gap-2 border border-white text-white px-7 py-3 text-sm hover:bg-white hover:text-neutral-900 transition-colors"
+              className="inline-flex items-center gap-2 border border-neutral-900 text-neutral-900 px-7 py-3.5 text-sm hover:bg-neutral-900 hover:text-white transition-colors"
             >
               Товары со скидкой
             </Link>
           </div>
         </div>
 
-        {bestSellers.length > 0 && (
-          <div className="relative mt-auto pt-16 pb-10 md:pb-14">
-            <HeroPromoCarousel products={bestSellers} />
-          </div>
-        )}
+        {/* Video — mobile below text, desktop right */}
+        <div className="relative w-full h-[52vh] md:h-auto md:min-h-0 md:order-2 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            poster="/hero-animation-poster.png"
+            className="absolute inset-0 h-full w-full object-cover object-top md:object-right [filter:brightness(1.18)_contrast(1.08)_saturate(1.08)]"
+          >
+            <source src="/hero-animation.webm" type="video/webm" />
+            <source src="/hero-animation.mp4" type="video/mp4" />
+          </video>
+        </div>
       </section>
+
+      {/* Trust bar */}
+      <section className="border-b border-neutral-100 bg-neutral-50/50">
+        <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
+          {[
+            { icon: ShieldCheck, title: "Только оригинал", text: "Официальный дистрибьютор" },
+            { icon: Truck, title: "Быстрая доставка", text: "По Ташкенту за 1 день" },
+            { icon: Gift, title: "Подарок к заказу", text: "От 500 000 сум" },
+          ].map(({ icon: Icon, title, text }) => (
+            <div key={title} className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-center md:text-left md:justify-center">
+              <div className="grid place-items-center h-10 w-10 rounded-full bg-neutral-100 text-neutral-700 shrink-0">
+                <Icon className="h-4 w-4" strokeWidth={1.75} />
+              </div>
+              <div className="text-[11px] md:text-sm leading-tight">
+                <div className="font-medium text-neutral-900">{title}</div>
+                <div className="text-neutral-500 mt-0.5 hidden md:block">{text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Vanilla Black line */}
+      {vanillaBlack.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 md:px-8 py-12 md:py-16">
+          <div className="flex items-end justify-between mb-6">
+            <div>
+              <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
+                <span className="h-px w-6 bg-neutral-400" />
+                Новая коллекция
+              </span>
+              <h2 className="mt-2 text-2xl md:text-3xl font-medium tracking-tight">Vanilla Black</h2>
+              <p className="mt-2 text-sm text-neutral-600 max-w-lg">
+                Мист, крем и гель для душа — единый тёплый шлейф ванили в ежедневном ритуале ухода.
+              </p>
+            </div>
+            <Link
+              href="/catalog?brand=vanilla-black"
+              className="group text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1 transition-colors"
+            >
+              Вся линейка <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {vanillaBlack.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Categories */}
       {categories.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 md:px-8 py-12 md:py-16">
           <div className="flex items-end justify-between mb-6">
-            <h2 className="text-2xl md:text-3xl font-medium tracking-tight">Категории</h2>
+            <div>
+              <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
+                <span className="h-px w-6 bg-neutral-400" />
+                Выберите свою
+              </span>
+              <h2 className="mt-2 text-2xl md:text-3xl font-medium tracking-tight">Категории</h2>
+            </div>
             <Link
               href="/categories"
-              className="text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1"
+              className="group text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1 transition-colors"
             >
-              Все категории <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              Все категории <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
@@ -86,15 +134,16 @@ export default async function HomePage() {
               <Link
                 key={c.id}
                 href={`/catalog?category=${c.slug}`}
-                className="group relative aspect-square overflow-hidden bg-neutral-100 hover:bg-neutral-200 transition-colors"
+                className="group relative aspect-square overflow-hidden bg-neutral-100 transition-colors"
               >
+                <div className="absolute inset-0 bg-neutral-200 opacity-0 group-hover:opacity-60 transition-opacity duration-500" />
                 <div className="absolute inset-0 flex items-end p-4">
-                  <div>
-                    <div className="text-base md:text-lg font-medium text-neutral-900 group-hover:text-neutral-700 transition-colors">
+                  <div className="relative">
+                    <div className="text-base md:text-lg font-medium text-neutral-900 transition-colors">
                       {c.name}
                     </div>
-                    <div className="text-xs text-neutral-500 mt-0.5 inline-flex items-center gap-1">
-                      Смотреть <ArrowRight className="h-3 w-3" strokeWidth={1.5} />
+                    <div className="text-xs text-neutral-500 mt-0.5 inline-flex items-center gap-1 group-hover:text-neutral-900 transition-colors">
+                      Смотреть <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
                     </div>
                   </div>
                 </div>
@@ -108,12 +157,18 @@ export default async function HomePage() {
       {bestSellers.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 md:px-8 pb-12 md:pb-16">
           <div className="flex items-end justify-between mb-6">
-            <h2 className="text-2xl md:text-3xl font-medium tracking-tight">Хиты продаж</h2>
+            <div>
+              <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
+                <span className="h-px w-6 bg-neutral-400" />
+                Любимое покупателями
+              </span>
+              <h2 className="mt-2 text-2xl md:text-3xl font-medium tracking-tight">Хиты продаж</h2>
+            </div>
             <Link
               href="/catalog?sort=popular"
-              className="text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1"
+              className="group text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1 transition-colors"
             >
-              Все хиты <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              Все хиты <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -123,6 +178,34 @@ export default async function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Brand storytelling */}
+      <section className="border-t border-neutral-100 bg-neutral-50/50">
+        <div className="mx-auto max-w-7xl px-4 md:px-8 py-16 md:py-24">
+          <div className="max-w-2xl">
+          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
+            <span className="h-px w-6 bg-neutral-400" />
+            О бренде
+          </span>
+          <h2 className="mt-3 text-3xl md:text-4xl font-light tracking-tight text-neutral-900 leading-tight">
+            Профессиональная косметика<br />GA-DE
+          </h2>
+          <p className="mt-5 text-base md:text-lg text-neutral-600 leading-relaxed">
+            GA-DE — израильский бренд с более чем 30-летней историей. Формулы разрабатываются в собственной лаборатории в Тель-Авиве и производятся на европейских фабриках.
+          </p>
+          <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+            На gade.uz — официальная дистрибуция в Узбекистане: только оригинальная продукция, актуальные партии и полный ассортимент декоративной косметики, ухода и ароматов.
+          </p>
+          <Link
+            href="/about"
+            className="group mt-8 inline-flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 transition-colors border-b border-neutral-900 hover:border-neutral-600 pb-0.5 w-fit"
+          >
+            Больше о бренде
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
+          </Link>
+          </div>
+        </div>
+      </section>
 
     </>
   );

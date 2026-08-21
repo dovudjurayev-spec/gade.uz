@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
   return (
     <Link
       href={`/catalog/${product.slug}`}
-      className="group flex h-full flex-col border border-neutral-200 hover:border-neutral-900 transition-colors"
+      className="group flex h-full flex-col border border-neutral-200 hover:border-neutral-400 hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.25)] transition-all duration-300"
     >
       <div className="relative aspect-square bg-neutral-100 overflow-hidden">
         {product.image ? (
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
             {product.brandLine}
           </div>
         )}
-        <div className="text-sm font-medium leading-snug min-h-[2.5rem]">
+        <div className="text-sm font-medium leading-snug min-h-[2.5rem] transition-colors">
           <span className="block truncate">{line1}</span>
           <span className="block truncate">{line2 || "\u00A0"}</span>
         </div>
@@ -101,7 +101,7 @@ function Badge({
   tone?: "default" | "accent" | "muted";
 }) {
   const styles = {
-    default: "bg-brand text-white",
+    default: "bg-brand-accent text-white",
     accent: "bg-brand-accent text-white",
     muted: "bg-neutral-200 text-neutral-700",
   } as const;

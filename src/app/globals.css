@@ -5,6 +5,28 @@
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .accent-underline {
+    background-image: linear-gradient(to right, #B4405A, #B4405A);
+    background-repeat: no-repeat;
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    transition: background-size 300ms ease;
+  }
+  .group:hover .accent-underline { background-size: 100% 1px; }
+
+  .skeleton {
+    background: linear-gradient(90deg, #f4f4f5 0%, #eeeeef 50%, #f4f4f5 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-marquee,
+    .animate-shimmer,
+    .animate-fade-in-up,
+    .animate-pulse-dot { animation: none !important; }
+  }
 }
 
 :root {

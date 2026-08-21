@@ -4,7 +4,7 @@ import { ShoppingBag, User, Heart } from "lucide-react";
 import { CartBadge } from "./cart-badge";
 import { SearchOverlay } from "./search-overlay";
 
-type Section = { href: string; label: string; accent?: boolean };
+type Section = { href: string; label: string };
 
 const sections: Section[] = [
   { href: "/catalog?sort=new", label: "Новинки" },
@@ -13,7 +13,7 @@ const sections: Section[] = [
   { href: "/catalog?category=skincare", label: "Уход" },
   { href: "/catalog?category=fragrances", label: "Ароматы" },
   { href: "/catalog?category=sets", label: "Наборы" },
-  { href: "/catalog?sale=1", label: "Аутлет", accent: true },
+  { href: "/catalog?sale=1", label: "Аутлет" },
 ];
 
 export function SiteHeader() {
@@ -76,19 +76,15 @@ export function SiteHeader() {
       </div>
 
       {/* Sections nav */}
-      <nav className="hidden md:block">
-        <ul className="mx-auto flex max-w-7xl items-center justify-center gap-8 lg:gap-12 px-4 md:px-8 h-9 text-[13px] font-normal">
+      <nav className="hidden md:block border-b border-neutral-100">
+        <ul className="mx-auto flex max-w-7xl items-center justify-center gap-8 lg:gap-12 px-4 md:px-8 h-10 text-[13px] font-normal">
           {sections.map((s) => (
             <li key={s.href}>
               <Link
                 href={s.href}
-                className={`transition-colors ${
-                  s.accent
-                    ? "text-red-600 hover:text-red-700"
-                    : "text-neutral-800 hover:text-neutral-900"
-                }`}
+                className="group relative inline-flex items-center text-neutral-800 hover:text-neutral-900 transition-colors"
               >
-                {s.label}
+                <span className="pb-0.5">{s.label}</span>
               </Link>
             </li>
           ))}
