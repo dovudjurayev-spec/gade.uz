@@ -83,9 +83,12 @@ export default function CartPage() {
             <span>Товары</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
-          <div className="flex justify-between text-sm text-neutral-500 mb-4">
-            <span>Доставка</span>
-            <span>рассчитается при оформлении</span>
+          <div className="text-sm text-neutral-500 mb-4">
+            <div className="flex justify-between">
+              <span>Доставка</span>
+              <span>—</span>
+            </div>
+            <div className="text-xs mt-1">рассчитается при оформлении</div>
           </div>
           <div className="border-t pt-4 flex justify-between font-semibold text-lg mb-6">
             <span>Итого</span>

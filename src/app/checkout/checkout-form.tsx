@@ -103,7 +103,7 @@ export function CheckoutForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="w-full border h-12 px-3"
-            placeholder="Дилноза"
+            placeholder=""
           />
         </Field>
 
@@ -198,7 +198,7 @@ export function CheckoutForm({
         </Field>
       </div>
 
-      <aside className="md:relative"><div className="border p-6 md:sticky md:top-32 space-y-4">
+      <aside className="md:sticky md:top-24 md:self-start border p-6 space-y-4 md:max-h-[calc(100vh-8rem)] md:overflow-auto"><div className="space-y-4">
         <div className="text-sm font-medium">В заказе</div>
         <ul className="space-y-2 text-sm border-b pb-4">
           {items.map((i) => (
