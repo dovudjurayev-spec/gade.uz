@@ -6,10 +6,10 @@ import { ProductCard } from "@/components/catalog/product-card";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, bestSellers, vanillaBlack] = await Promise.all([
+  const [categories, bestSellers, vanilla] = await Promise.all([
     listCategories().then((c) => c.slice(0, 4)),
     getFeaturedProducts(8),
-    listProducts({ brandLineSlug: "vanilla-black", limit: 4 }),
+    listProducts({ brandLineSlug: "vanilla", limit: 4 }),
   ]);
 
   return (
@@ -22,10 +22,10 @@ export default async function HomePage() {
             Новая коллекция · Скидка до 30%
           </span>
           <h1 className="text-4xl md:text-6xl font-light leading-[1.05] tracking-tight text-neutral-900 mb-6">
-            Vanilla Black — новая коллекция
+            Vanilla — тёплая линейка
           </h1>
           <p className="text-base md:text-lg text-neutral-600 mb-8 max-w-md leading-relaxed">
-            Мист для тела, крем и гель для душа — единая линейка с тёплым шлейфом ванили. Ритуал ухода, объединённый одним ароматом. Знакомство со скидкой до 30%.
+            Мисты, кремы и парфюм — единая линейка с тёплым шлейфом ванили. Ритуал ухода, объединённый одним ароматом. Знакомство со скидкой до 30%.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
@@ -82,29 +82,29 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Vanilla Black line */}
-      {vanillaBlack.length > 0 && (
+      {/* Vanilla line */}
+      {vanilla.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 md:px-8 py-12 md:py-16">
           <div className="flex items-end justify-between mb-6">
             <div>
               <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
                 <span className="h-px w-6 bg-neutral-400" />
-                Новая коллекция
+                Линейка
               </span>
-              <h2 className="mt-2 text-2xl md:text-3xl font-medium tracking-tight">Vanilla Black</h2>
+              <h2 className="mt-2 text-2xl md:text-3xl font-medium tracking-tight">Vanilla</h2>
               <p className="mt-2 text-sm text-neutral-600 max-w-lg">
-                Мист, крем и гель для душа — единый тёплый шлейф ванили в ежедневном ритуале ухода.
+                Тёплый шлейф ванили в ежедневном ритуале ухода — мисты, кремы, парфюм.
               </p>
             </div>
             <Link
-              href="/catalog?brand=vanilla-black"
+              href="/catalog?brand=vanilla"
               className="group text-sm text-neutral-600 hover:text-neutral-900 inline-flex items-center gap-1 transition-colors"
             >
               Вся линейка <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {vanillaBlack.map((p) => (
+            {vanilla.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
           </div>
