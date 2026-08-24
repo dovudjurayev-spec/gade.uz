@@ -3,6 +3,11 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { customers, orderItems, orders, outboundQueue, products } from "@/db/schema";
 import { normalizePhoneUz } from "@/lib/phone";
+import {
+  calculateCourierPriceTiyin,
+  isWithinDeliveryZone,
+  routeDistanceKm,
+} from "@/lib/delivery";
 import { processQueue } from "@/services/queue/processor";
 
 const cartLineSchema = z.object({
@@ -16,6 +21,8 @@ export const createOrderSchema = z.object({
   deliveryMethod: z.enum(["courier_tashkent", "region_shipping", "pickup"]),
   paymentMethod: z.enum(["payme", "click", "card_on_delivery", "cash_on_delivery"]),
   address: z.string().trim().max(500).optional(),
+  deliveryLat: z.number().gte(-90).lte(90).optional(),
+  deliveryLng: z.number().gte(-180).lte(180).optional(),
   comment: z.string().trim().max(1000).optional(),
   promoCode: z.string().trim().max(64).optional(),
   items: z.array(cartLineSchema).min(1).max(100),
@@ -27,12 +34,7 @@ export type CreateOrderResult =
   | { ok: true; orderId: number; orderNumber: string }
   | { ok: false; error: string };
 
-const DELIVERY_COST_TIYIN: Record<string, number> = {
-  courier_tashkent: 25_000_00,
-  region_shipping: 45_000_00,
-  pickup: 0,
-};
-const FREE_DELIVERY_THRESHOLD_TIYIN = 500_000_00;
+const REGION_DELIVERY_TIYIN = 45_000_00;
 
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
   const parsed = createOrderSchema.safeParse(input);
@@ -90,11 +92,21 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     });
   }
 
-  const baseDelivery = DELIVERY_COST_TIYIN[data.deliveryMethod] ?? 0;
-  const deliveryCost =
-    data.deliveryMethod === "courier_tashkent" && subtotal >= FREE_DELIVERY_THRESHOLD_TIYIN
-      ? 0
-      : baseDelivery;
+  let deliveryCost = 0;
+  let deliveryDistanceKm: number | null = null;
+  if (data.deliveryMethod === "courier_tashkent") {
+    if (data.deliveryLat == null || data.deliveryLng == null) {
+      return { ok: false, error: "Отметьте точку доставки на карте" };
+    }
+    const dest = { lat: data.deliveryLat, lng: data.deliveryLng };
+    if (!isWithinDeliveryZone(dest)) {
+      return { ok: false, error: "Точка вне зоны доставки по Ташкенту" };
+    }
+    deliveryDistanceKm = routeDistanceKm(dest);
+    deliveryCost = calculateCourierPriceTiyin(deliveryDistanceKm, subtotal);
+  } else if (data.deliveryMethod === "region_shipping") {
+    deliveryCost = REGION_DELIVERY_TIYIN;
+  }
 
   const total = subtotal + deliveryCost;
   const initialStatus =
@@ -125,6 +137,10 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         paymentMethod: data.paymentMethod,
         deliveryMethod: data.deliveryMethod,
         deliveryAddress: data.address ?? null,
+        deliveryLat: data.deliveryLat != null ? String(data.deliveryLat) : null,
+        deliveryLng: data.deliveryLng != null ? String(data.deliveryLng) : null,
+        deliveryDistanceKm:
+          deliveryDistanceKm != null ? deliveryDistanceKm.toFixed(2) : null,
         deliveryCostTiyin: deliveryCost,
         subtotalTiyin: subtotal,
         totalTiyin: total,

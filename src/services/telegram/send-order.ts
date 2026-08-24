@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders, orderItems } from "@/db/schema";
 import { env } from "@/lib/env";
-import { sendMessage } from "./client";
+import { sendLocation, sendMessage } from "./client";
 import { formatOrderMessage, orderKeyboard } from "./format-order";
 
 export async function sendOrderToManagers(orderId: number): Promise<number | null> {
@@ -30,6 +30,25 @@ export async function sendOrderToManagers(orderId: number): Promise<number | nul
     .update(orders)
     .set({ telegramMessageId: res.message_id })
     .where(eq(orders.id, orderId));
+
+  // Прикрепляем точку на карте отдельным сообщением-ответом,
+  // чтобы менеджер мог открыть её нативно в Telegram/Яндекс/Google.
+  if (order.deliveryLat && order.deliveryLng) {
+    const lat = Number(order.deliveryLat);
+    const lng = Number(order.deliveryLng);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      try {
+        await sendLocation({
+          chat_id: env.TELEGRAM_ORDERS_CHAT_ID,
+          latitude: lat,
+          longitude: lng,
+          reply_to_message_id: res.message_id,
+        });
+      } catch (e) {
+        console.error("[telegram] sendLocation failed:", e);
+      }
+    }
+  }
 
   return res.message_id;
 }

@@ -36,6 +36,15 @@ export function sendMessage(params: {
   return call<SendMessageResult>("sendMessage", params);
 }
 
+export function sendLocation(params: {
+  chat_id: string | number;
+  latitude: number;
+  longitude: number;
+  reply_to_message_id?: number;
+}): Promise<SendMessageResult> {
+  return call<SendMessageResult>("sendLocation", params);
+}
+
 export function editMessageReplyMarkup(params: {
   chat_id: string | number;
   message_id: number;

@@ -8,12 +8,9 @@ import type { LucideIcon } from "lucide-react";
 import { useCart, cartSubtotal } from "@/stores/cart";
 import { formatPrice } from "@/lib/money";
 import { submitOrderAction } from "./actions";
+import DeliveryMap from "@/components/DeliveryMap";
 
-const DELIVERY_COST: Record<string, number> = {
-  courier_tashkent: 25_000_00,
-  region_shipping: 45_000_00,
-  pickup: 0,
-};
+const REGION_DELIVERY = 45_000_00;
 const FREE_THRESHOLD = 500_000_00;
 
 type SavedAddress = { id: number; label: string; value: string; isDefault: boolean };
@@ -42,11 +39,57 @@ export function CheckoutForm({
   const [payment, setPayment] = useState<"payme" | "click" | "card_on_delivery" | "cash_on_delivery">("payme");
   const [address, setAddress] = useState(initialAddress);
   const [comment, setComment] = useState("");
+  const [showMap, setShowMap] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const baseDelivery = DELIVERY_COST[delivery] ?? 0;
-  const deliveryCost = delivery === "courier_tashkent" && subtotal >= FREE_THRESHOLD ? 0 : baseDelivery;
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [quote, setQuote] = useState<{ priceTiyin: number; distanceKm: number } | null>(null);
+  const [quoting, setQuoting] = useState(false);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+
+  const coordsLat = coords?.lat;
+  const coordsLng = coords?.lng;
+  useEffect(() => {
+    if (delivery !== "courier_tashkent" || coordsLat == null || coordsLng == null) {
+      setQuote(null);
+      setQuoteError(null);
+      return;
+    }
+    let cancelled = false;
+    setQuoting(true);
+    setQuoteError(null);
+    fetch("/api/delivery/quote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat: coordsLat, lng: coordsLng, subtotalTiyin: subtotal }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.ok) {
+          setQuote({ priceTiyin: data.priceTiyin, distanceKm: data.distanceKm });
+          if (data.address) setAddress(data.address);
+        } else {
+          setQuote(null);
+          setQuoteError(data.error ?? "Не удалось рассчитать");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setQuoteError("Не удалось рассчитать доставку");
+      })
+      .finally(() => !cancelled && setQuoting(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [coordsLat, coordsLng, subtotal, delivery]);
+
+  let deliveryCost = 0;
+  if (delivery === "courier_tashkent") {
+    deliveryCost = subtotal >= FREE_THRESHOLD ? 0 : quote?.priceTiyin ?? 0;
+  } else if (delivery === "region_shipping") {
+    deliveryCost = REGION_DELIVERY;
+  }
   const total = subtotal + deliveryCost;
 
   if (items.length === 0) {
@@ -74,13 +117,23 @@ export function CheckoutForm({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (delivery === "courier_tashkent" && !coords) {
+      setError("Отметьте точку доставки на карте");
+      return;
+    }
+    const finalAddress =
+      delivery === "courier_tashkent" || delivery === "region_shipping"
+        ? address
+        : undefined;
     startTransition(async () => {
       const result = await submitOrderAction({
         name,
         phone,
         deliveryMethod: delivery,
         paymentMethod: payment,
-        address: delivery !== "pickup" ? address : undefined,
+        address: finalAddress,
+        deliveryLat: delivery === "courier_tashkent" ? coords?.lat : undefined,
+        deliveryLng: delivery === "courier_tashkent" ? coords?.lng : undefined,
         comment: comment || undefined,
         items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
       });
@@ -123,7 +176,7 @@ export function CheckoutForm({
             <OptionTile
               icon={Truck}
               title="Курьер по Ташкенту"
-              subtitle="25 000 сум · бесплатно от 500 000"
+              subtitle="От 20 000 сум · бесплатно от 500 000"
               checked={delivery === "courier_tashkent"}
               onSelect={() => setDelivery("courier_tashkent")}
             />
@@ -144,7 +197,39 @@ export function CheckoutForm({
           </div>
         </Field>
 
-        {delivery !== "pickup" && (
+        {delivery === "courier_tashkent" && (
+          <>
+            <Field label="Адрес">
+              <AddressPicker
+                value={address}
+                onChange={setAddress}
+                options={savedAddresses}
+              />
+            </Field>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowMap((v) => !v)}
+                className="inline-flex items-center gap-2 border border-neutral-300 hover:border-neutral-900 h-11 px-4 text-sm uppercase tracking-widest transition-colors"
+              >
+                <MapPin className="h-4 w-4" strokeWidth={1.5} />
+                {showMap ? "Скрыть карту" : coords ? "Изменить точку на карте" : "Уточнить точку на карте"}
+              </button>
+              {!coords && (
+                <p className="text-xs text-neutral-500">
+                  Отметьте точку на карте — так мы точно рассчитаем стоимость доставки.
+                </p>
+              )}
+              {showMap && (
+                <div className="pt-2">
+                  <DeliveryMap value={coords} onChange={setCoords} />
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {delivery === "region_shipping" && (
           <Field label="Адрес">
             <AddressPicker
               value={address}
@@ -209,7 +294,27 @@ export function CheckoutForm({
           ))}
         </ul>
         <Row label="Товары" value={formatPrice(subtotal)} />
-        <Row label="Доставка" value={deliveryCost === 0 ? "бесплатно" : formatPrice(deliveryCost)} />
+        <Row
+          label={
+            delivery === "courier_tashkent" && quote
+              ? `Доставка · ${quote.distanceKm} км`
+              : "Доставка"
+          }
+          value={
+            delivery === "courier_tashkent" && !coords
+              ? "укажите точку"
+              : quoting
+                ? "считаем…"
+                : quoteError
+                  ? "—"
+                  : deliveryCost === 0
+                    ? "бесплатно"
+                    : formatPrice(deliveryCost)
+          }
+        />
+        {quoteError && (
+          <div className="text-xs text-red-600 -mt-2">{quoteError}</div>
+        )}
         <div className="border-t pt-3 flex justify-between font-semibold text-lg">
           <span>Итого</span>
           <span>{formatPrice(total)}</span>
