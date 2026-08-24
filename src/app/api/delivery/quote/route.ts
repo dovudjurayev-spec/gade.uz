@@ -6,6 +6,7 @@ import {
   routeDistanceKm,
   WAREHOUSE,
 } from "@/lib/delivery";
+import { loadDeliveryTariff } from "@/lib/delivery-server";
 
 const bodySchema = z.object({
   lat: z.number().gte(-90).lte(90),
@@ -34,7 +35,8 @@ export async function POST(req: Request) {
   }
 
   const distanceKm = routeDistanceKm({ lat, lng });
-  const priceTiyin = calculateCourierPriceTiyin(distanceKm, subtotalTiyin);
+  const tariff = await loadDeliveryTariff();
+  const priceTiyin = calculateCourierPriceTiyin(distanceKm, subtotalTiyin, tariff);
   const address = await reverseGeocode(lat, lng);
 
   return NextResponse.json({

@@ -8,6 +8,7 @@ import {
   isWithinDeliveryZone,
   routeDistanceKm,
 } from "@/lib/delivery";
+import { loadDeliveryTariff } from "@/lib/delivery-server";
 import { processQueue } from "@/services/queue/processor";
 
 const cartLineSchema = z.object({
@@ -34,7 +35,6 @@ export type CreateOrderResult =
   | { ok: true; orderId: number; orderNumber: string }
   | { ok: false; error: string };
 
-const REGION_DELIVERY_TIYIN = 45_000_00;
 
 export async function createOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
   const parsed = createOrderSchema.safeParse(input);
@@ -92,6 +92,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     });
   }
 
+  const tariff = await loadDeliveryTariff();
   let deliveryCost = 0;
   let deliveryDistanceKm: number | null = null;
   if (data.deliveryMethod === "courier_tashkent") {
@@ -103,9 +104,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       return { ok: false, error: "Точка вне зоны доставки по Ташкенту" };
     }
     deliveryDistanceKm = routeDistanceKm(dest);
-    deliveryCost = calculateCourierPriceTiyin(deliveryDistanceKm, subtotal);
+    deliveryCost = calculateCourierPriceTiyin(deliveryDistanceKm, subtotal, tariff);
   } else if (data.deliveryMethod === "region_shipping") {
-    deliveryCost = REGION_DELIVERY_TIYIN;
+    deliveryCost = tariff.regionTiyin;
   }
 
   const total = subtotal + deliveryCost;

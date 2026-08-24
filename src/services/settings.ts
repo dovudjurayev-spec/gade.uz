@@ -3,7 +3,8 @@ import { db } from "@/db/client";
 import { settings } from "@/db/schema";
 
 export type SiteSettings = {
-  courierCostSum: number;
+  courierBaseSum: number;
+  courierPerKmSum: number;
   regionCostSum: number;
   freeDeliveryThresholdSum: number;
   phone: string;
@@ -16,15 +17,16 @@ export type SiteSettings = {
 };
 
 const DEFAULTS: SiteSettings = {
-  courierCostSum: 25_000,
+  courierBaseSum: 20_000,
+  courierPerKmSum: 3_000,
   regionCostSum: 45_000,
   freeDeliveryThresholdSum: 500_000,
-  phone: "",
-  telegramUrl: "",
-  address: "Ташкент",
-  telegramOrdersChatId: "",
-  telegramTechChatId: "",
-  heroTitle: "GADE Cosmetics в Узбекистане",
+  phone: "+998 90 167 50 04",
+  telegramUrl: "https://t.me/gadeuz",
+  address: "Мирабадский пр. 64В, Ташкент",
+  telegramOrdersChatId: "1261400422",
+  telegramTechChatId: "1261400422",
+  heroTitle: "GA-DE Cosmetics в Узбекистане",
   heroSubtitle:
     "Профессиональная косметика, которой пользуются лучшие салоны Ташкента. Теперь напрямую вам, с доставкой на дом.",
 };

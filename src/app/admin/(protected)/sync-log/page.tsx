@@ -5,6 +5,12 @@ import { syncLog } from "@/db/schema";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Журнал синхронизации · Админка" };
 
+function directionLabel(d: string): string {
+  if (d === "site_to_bitrix") return "Сайт → Billz";
+  if (d === "bitrix_to_site") return "Billz → Сайт";
+  return d;
+}
+
 export default async function SyncLogPage() {
   const rows = await db.select().from(syncLog).orderBy(desc(syncLog.createdAt)).limit(200);
 
@@ -32,7 +38,7 @@ export default async function SyncLogPage() {
                 <td className="px-3 py-2 whitespace-nowrap">
                   {new Date(r.createdAt).toLocaleString("ru-RU", { timeZone: "Asia/Tashkent" })}
                 </td>
-                <td className="px-3 py-2 text-neutral-600">{r.direction}</td>
+                <td className="px-3 py-2 text-neutral-600">{directionLabel(r.direction)}</td>
                 <td className="px-3 py-2">{r.entity}</td>
                 <td className={`px-3 py-2 ${r.status === "error" ? "text-red-600" : r.status === "ok" ? "text-green-700" : "text-yellow-700"}`}>
                   {r.status}

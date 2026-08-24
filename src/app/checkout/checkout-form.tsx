@@ -9,9 +9,7 @@ import { useCart, cartSubtotal } from "@/stores/cart";
 import { formatPrice } from "@/lib/money";
 import { submitOrderAction } from "./actions";
 import DeliveryMap from "@/components/DeliveryMap";
-
-const REGION_DELIVERY = 45_000_00;
-const FREE_THRESHOLD = 500_000_00;
+import type { DeliveryTariff } from "@/lib/delivery";
 
 type SavedAddress = { id: number; label: string; value: string; isDefault: boolean };
 
@@ -20,6 +18,7 @@ type Props = {
   initialPhone?: string;
   initialAddress?: string;
   savedAddresses?: SavedAddress[];
+  tariff: DeliveryTariff;
 };
 
 export function CheckoutForm({
@@ -27,7 +26,10 @@ export function CheckoutForm({
   initialPhone = "",
   initialAddress = "",
   savedAddresses = [],
+  tariff,
 }: Props) {
+  const REGION_DELIVERY = tariff.regionTiyin;
+  const FREE_THRESHOLD = tariff.freeThresholdTiyin;
   const router = useRouter();
   const items = useCart((s) => s.items);
   const clear = useCart((s) => s.clear);
@@ -176,14 +178,14 @@ export function CheckoutForm({
             <OptionTile
               icon={Truck}
               title="Курьер по Ташкенту"
-              subtitle="От 20 000 сум · бесплатно от 500 000"
+              subtitle={`От ${formatPrice(tariff.baseTiyin)} · бесплатно от ${formatPrice(FREE_THRESHOLD)}`}
               checked={delivery === "courier_tashkent"}
               onSelect={() => setDelivery("courier_tashkent")}
             />
             <OptionTile
               icon={Package}
               title="В регион"
-              subtitle="45 000 сум"
+              subtitle={formatPrice(REGION_DELIVERY)}
               checked={delivery === "region_shipping"}
               onSelect={() => setDelivery("region_shipping")}
             />

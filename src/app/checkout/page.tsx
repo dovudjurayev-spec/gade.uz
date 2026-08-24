@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { customerAddresses } from "@/db/schema";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { formatPhoneUz } from "@/lib/phone";
+import { loadDeliveryTariff } from "@/lib/delivery-server";
 import { CheckoutForm } from "./checkout-form";
 
 export const metadata = { title: "Оформление заказа" };
@@ -37,6 +38,7 @@ export default async function CheckoutPage() {
   }
 
   const initialAddress = addresses.find((a) => a.isDefault)?.value ?? addresses[0]?.value ?? "";
+  const tariff = await loadDeliveryTariff();
 
   return (
     <div className="mx-auto max-w-5xl px-4 md:px-8 py-8">
@@ -46,6 +48,7 @@ export default async function CheckoutPage() {
         initialPhone={customer ? formatPhoneUz(customer.phone) : ""}
         initialAddress={initialAddress}
         savedAddresses={addresses}
+        tariff={tariff}
       />
     </div>
   );
