@@ -8,7 +8,7 @@ import { listCategoriesWithProducts } from "@/repositories/products";
 type Section = { href: string; label: string };
 
 export async function SiteHeader() {
-  const cats = await listCategoriesWithProducts();
+  const cats = await listCategoriesWithProducts().catch(() => []);
   const sections: Section[] = [
     { href: "/catalog?sort=new", label: "Новинки" },
     { href: "/catalog?sort=popular", label: "Хиты продаж" },
