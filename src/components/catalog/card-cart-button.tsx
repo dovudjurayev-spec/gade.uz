@@ -13,15 +13,18 @@ type Props = {
     volume: string | null;
   };
   disabled?: boolean;
+  maxQuantity?: number;
 };
 
-export function CardCartButton({ product, disabled }: Props) {
+export function CardCartButton({ product, disabled, maxQuantity }: Props) {
   const items = useCart((s) => s.items);
   const add = useCart((s) => s.add);
   const setQuantity = useCart((s) => s.setQuantity);
 
   const item = items.find((i) => i.productId === product.id);
   const qty = item?.quantity ?? 0;
+  const max = typeof maxQuantity === "number" ? Math.max(0, maxQuantity) : Infinity;
+  const atMax = qty >= max;
 
   function stop(e: React.MouseEvent) {
     e.preventDefault();
@@ -80,11 +83,12 @@ export function CardCartButton({ product, disabled }: Props) {
       <button
         type="button"
         aria-label="Увеличить"
+        disabled={atMax}
         onClick={(e) => {
           stop(e);
-          setQuantity(product.id, qty + 1);
+          setQuantity(product.id, Math.min(qty + 1, max));
         }}
-        className="grid place-items-center hover:bg-neutral-100 transition-colors"
+        className="grid place-items-center hover:bg-neutral-100 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent"
       >
         <Plus className="h-4 w-4" strokeWidth={1.5} />
       </button>

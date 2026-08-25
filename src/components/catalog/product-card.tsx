@@ -70,6 +70,11 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         <div className="text-xs text-neutral-500 mt-0.5 min-h-[1rem]">
           {product.volume ?? ""}
         </div>
+        {product.shortDescription && (
+          <p className="text-xs text-neutral-600 mt-2 line-clamp-2 leading-relaxed min-h-[2rem]">
+            {product.shortDescription}
+          </p>
+        )}
         <div className="mt-2 flex flex-col">
           <span className={cn("font-sans font-semibold whitespace-nowrap", outOfStock && "text-neutral-400")}>
             {formatPrice(product.priceTiyin)}
@@ -89,6 +94,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
               volume: product.volume,
             }}
             disabled={outOfStock}
+            maxQuantity={product.stock}
           />
         </div>
       </div>

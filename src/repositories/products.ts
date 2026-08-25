@@ -69,6 +69,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       isFeatured: products.isFeatured,
       images: products.images,
       imageFit: products.imageFit,
+      description: products.description,
       brandLine: brandLines.name,
       categoryName: categories.name,
       categorySlug: categories.slug,
@@ -95,9 +96,20 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     image: firstImage(r.images),
     imageFit: (r.imageFit === "cover" ? "cover" : "contain"),
     brandLine: r.brandLine,
+    shortDescription: shortenDescription(r.description),
     categoryName: r.categoryName,
     categorySlug: r.categorySlug,
   }));
+}
+
+function shortenDescription(text: string | null | undefined, max = 90): string | null {
+  if (!text) return null;
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return null;
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
 }
 
 export async function getProductBySlug(slug: string): Promise<ProductDetail | null> {
@@ -120,6 +132,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       isFeatured: products.isFeatured,
       images: products.images,
       imageFit: products.imageFit,
+      categoryName: categories.name,
       categorySlug: categories.slug,
       brandLineSlug: brandLines.slug,
       brandLine: brandLines.name,
@@ -138,6 +151,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
     image: firstImage(p.images),
     imageFit: (p.imageFit === "cover" ? "cover" : "contain"),
     images: p.images ?? [],
+    shortDescription: shortenDescription(p.description),
   };
 }
 

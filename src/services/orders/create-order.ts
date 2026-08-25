@@ -123,7 +123,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     if (current) {
       const [updated] = await tx
         .update(customers)
-        .set({ name: data.name, phone })
+        .set({ name: data.name })
         .where(eq(customers.id, current.id))
         .returning({ id: customers.id });
       customer = updated;

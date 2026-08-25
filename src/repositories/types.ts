@@ -12,6 +12,7 @@ export type ProductListItem = {
   image: string | null;
   imageFit: "contain" | "cover";
   brandLine: string | null;
+  shortDescription: string | null;
   categoryName?: string | null;
   categorySlug?: string | null;
 };
@@ -23,6 +24,7 @@ export type ProductDetail = ProductListItem & {
   hairType: string | null;
   skinType: string | null;
   images: string[];
+  categoryName: string | null;
   categorySlug: string | null;
   brandLineSlug: string | null;
 };

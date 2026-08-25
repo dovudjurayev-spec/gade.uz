@@ -83,7 +83,7 @@ export default function CartPage() {
             <span>Товары</span>
             <span>{formatPrice(subtotal)}</span>
           </div>
-          <div className="text-sm mb-4">
+          <div className="text-sm mb-4 text-neutral-400">
             <div className="flex justify-between">
               <span>Доставка</span>
               <span>—</span>
