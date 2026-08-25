@@ -21,7 +21,6 @@ npm-debug.log*
 
 # uploads (production)
 uploads/
-public/products/
 
 # claude
 .claude/
@@ -34,3 +33,6 @@ tsconfig.tsbuildinfo
 deploy/
 deploy.tar.gz
 
+non-white-bg/
+colored-bg/
+white-bg/
