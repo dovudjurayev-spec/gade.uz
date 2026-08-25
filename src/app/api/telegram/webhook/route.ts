@@ -22,9 +22,10 @@ function displayName(u: CallbackUser): string {
 }
 
 export async function POST(req: Request) {
-  // Защита секретом в URL — Telegram отправит секрет в заголовке X-Telegram-Bot-Api-Secret-Token
+  // Telegram отправит секрет в заголовке X-Telegram-Bot-Api-Secret-Token
   const secret = req.headers.get("x-telegram-bot-api-secret-token");
-  if (!env.TELEGRAM_BOT_TOKEN || secret !== env.CRON_TOKEN) {
+  const expected = env.TELEGRAM_WEBHOOK_SECRET;
+  if (!env.TELEGRAM_BOT_TOKEN || !expected || secret !== expected) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

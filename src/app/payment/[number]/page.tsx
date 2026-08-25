@@ -6,21 +6,37 @@ import { env } from "@/lib/env";
 import { buildPaymeCheckoutUrl } from "@/services/payments/payme/checkout-url";
 import { buildClickCheckoutUrl } from "@/services/payments/click/handler";
 import { formatPrice } from "@/lib/money";
+import { getCurrentCustomer } from "@/lib/customer-auth";
+import { signOrderNumber, verifyOrderToken } from "@/lib/order-token";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ number: string }>;
+type Search = Promise<{ t?: string }>;
 
-export default async function PaymentPage({ params }: { params: Params }) {
+export default async function PaymentPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Search;
+}) {
   const { number } = await params;
+  const { t } = await searchParams;
   const order = await db.query.orders.findFirst({ where: eq(orders.number, number) });
   if (!order) notFound();
 
-  const returnUrl = `${env.APP_URL}/checkout/success/${order.number}`;
+  const current = await getCurrentCustomer();
+  const isOwner = current?.id === order.customerId;
+  if (!isOwner && !verifyOrderToken(order.number, t ?? null)) {
+    notFound();
+  }
+  const successToken = isOwner ? "" : `?t=${encodeURIComponent(signOrderNumber(order.number))}`;
+  const returnUrl = `${env.APP_URL}/checkout/success/${order.number}${successToken}`;
 
   if (order.status === "paid") {
-    redirect(`/checkout/success/${order.number}`);
+    redirect(`/checkout/success/${order.number}${successToken}`);
   }
 
   if (order.paymentMethod === "payme" && env.PAYME_MERCHANT_ID) {
@@ -51,7 +67,7 @@ export default async function PaymentPage({ params }: { params: Params }) {
       <p className="text-neutral-600 mb-6">
         Заказ №{order.number} на сумму {formatPrice(order.totalTiyin)} сохранён. Менеджер свяжется с вами.
       </p>
-      <Link href={`/checkout/success/${order.number}`} className="underline">
+      <Link href={`/checkout/success/${order.number}${successToken}`} className="underline">
         Вернуться к заказу
       </Link>
     </div>

@@ -10,6 +10,7 @@ import {
   normalizeEmail,
 } from "@/lib/customer-auth";
 import { env } from "@/lib/env";
+import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { sendVerificationCodeEmail } from "@/services/email/resend";
 
 export const runtime = "nodejs";
@@ -28,6 +29,15 @@ function hashCode(code: string, email: string): string {
 }
 
 export async function POST(req: Request) {
+  const ip = clientIp(req);
+  const rl = rateLimit(`register:${ip}`, 5, 60 * 60 * 1000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { ok: false, error: "too_many_requests", retryAfterSec: rl.retryAfterSec },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ ok: false, error: "bad_request" }, { status: 400 });

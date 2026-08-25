@@ -11,6 +11,15 @@ import { ProductCard } from "@/components/catalog/product-card";
 
 export const dynamic = "force-dynamic";
 
+function safeJsonLd(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}
+
 type Params = Promise<{ slug: string }>;
 
 const CATEGORY_HIGHLIGHTS: Record<string, string[]> = {
@@ -82,7 +91,7 @@ export default async function ProductPage({ params }: { params: Params }) {
     <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
       />
 
       <nav className="flex items-center gap-1.5 text-xs text-neutral-500 mb-6 overflow-x-auto">

@@ -5,18 +5,35 @@ import { db } from "@/db/client";
 import { orders } from "@/db/schema";
 import { formatPrice } from "@/lib/money";
 import { formatPhoneUz } from "@/lib/phone";
+import { getCurrentCustomer } from "@/lib/customer-auth";
+import { verifyOrderToken } from "@/lib/order-token";
 import { ClearCart } from "../clear-cart";
 
 export const dynamic = "force-dynamic";
 
 type Params = Promise<{ number: string }>;
+type Search = Promise<{ t?: string }>;
 
-export default async function SuccessPage({ params }: { params: Params }) {
+export default async function SuccessPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: Search;
+}) {
   const { number } = await params;
+  const { t } = await searchParams;
   const order = await db.query.orders.findFirst({
     where: eq(orders.number, number),
   });
   if (!order) notFound();
+
+  const current = await getCurrentCustomer();
+  const isOwner = current?.id === order.customerId;
+  if (!isOwner && !verifyOrderToken(order.number, t ?? null)) {
+    notFound();
+  }
+  const tokenSuffix = !isOwner && t ? `?t=${encodeURIComponent(t)}` : "";
 
   const requiresOnlinePayment =
     order.paymentMethod === "payme" || order.paymentMethod === "click";
@@ -52,7 +69,7 @@ export default async function SuccessPage({ params }: { params: Params }) {
           Заказ создан. Перейдите к оплате — после подтверждения мы начнём его собирать.
           <div className="mt-3">
             <Link
-              href={`/payment/${order.number}`}
+              href={`/payment/${order.number}${tokenSuffix}`}
               className="inline-block bg-brand text-white px-6 py-3 uppercase tracking-widest text-xs hover:bg-brand-accent"
             >
               Оплатить
