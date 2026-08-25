@@ -183,11 +183,51 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          {(() => {
+            const groupByCategory =
+              (activeSort === "popular") && !activeCategory && !sp.q;
+            if (!groupByCategory) {
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {products.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                  ))}
+                </div>
+              );
+            }
+            const groups: { name: string; slug: string | null; items: typeof products }[] = [];
+            for (const p of products) {
+              const name = p.categoryName ?? "Прочее";
+              const slug = p.categorySlug ?? null;
+              const last = groups[groups.length - 1];
+              if (last && last.name === name) last.items.push(p);
+              else groups.push({ name, slug, items: [p] });
+            }
+            return (
+              <div className="space-y-10">
+                {groups.map((g, i) => (
+                  <section key={`${g.slug ?? "misc"}-${i}`}>
+                    <div className="mb-4 flex items-baseline justify-between gap-4">
+                      <h2 className="text-xl md:text-2xl font-light tracking-tight">{g.name}</h2>
+                      {g.slug && (
+                        <Link
+                          href={buildHref(sp, { category: g.slug })}
+                          className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
+                        >
+                          Смотреть все →
+                        </Link>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {g.items.map((p) => (
+                        <ProductCard key={p.id} product={p} />
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            );
+          })()}
           {totalPages > 1 && (
             <Pagination current={pageNum} total={totalPages} buildPageHref={(n) => buildHref(sp, { page: n })} />
           )}

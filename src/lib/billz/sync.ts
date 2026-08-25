@@ -1,5 +1,3 @@
-import { mkdir, writeFile, access } from "node:fs/promises";
-import { join } from "node:path";
 import { and, eq, inArray, isNotNull, isNull, notInArray } from "drizzle-orm";
 import { db } from "@/db/client";
 import { brandLines, categories, products } from "@/db/schema";
@@ -9,8 +7,6 @@ import {
 } from "./client";
 
 const PAGE_SIZE = 100;
-const IMAGES_DIR = join(process.cwd(), "public", "products");
-const SKIP_IMAGES = process.env.VERCEL === "1" || process.env.SKIP_IMAGE_DOWNLOAD === "1";
 
 function slugify(input: string): string {
   const map: Record<string, string> = {
@@ -29,35 +25,20 @@ function slugify(input: string): string {
     .slice(0, 180);
 }
 
-async function fileExists(path: string) {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
+function collectImageUrls(p: BillzProduct): string[] {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  const push = (u: string | undefined | null) => {
+    if (!u) return;
+    if (seen.has(u)) return;
+    seen.add(u);
+    urls.push(u);
+  };
+  push(p.main_image_url_full);
+  for (const photo of p.photos ?? []) {
+    push(photo?.photo_url_full ?? photo?.photo_url);
   }
-}
-
-async function downloadImage(url: string, billzId: string, idx: number): Promise<string | null> {
-  if (!url) return null;
-  const cleanUrl = url.split("?")[0] ?? url;
-  const ext = (cleanUrl.split(".").pop() ?? "jpg").toLowerCase().slice(0, 5);
-  const safeExt = /^(jpg|jpeg|png|webp|gif)$/.test(ext) ? ext : "jpg";
-  const fileName = `${billzId}-${idx}.${safeExt}`;
-  const filePath = join(IMAGES_DIR, fileName);
-  const publicPath = `/products/${fileName}`;
-
-  if (await fileExists(filePath)) return publicPath;
-
-  try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const buf = Buffer.from(await res.arrayBuffer());
-    await writeFile(filePath, buf);
-    return publicPath;
-  } catch {
-    return null;
-  }
+  return urls;
 }
 
 async function ensureCategory(billzCat: { id: string; name: string } | undefined) {
@@ -98,10 +79,6 @@ export type SyncResult = {
 export async function syncBillzCatalog(): Promise<SyncResult> {
   const shopId = process.env.BILLZ_SHOP_ID;
   if (!shopId) throw new Error("BILLZ_SHOP_ID is not set");
-
-  if (!SKIP_IMAGES) {
-    try { await mkdir(IMAGES_DIR, { recursive: true }); } catch {}
-  }
 
   const result: SyncResult = {
     totalFromBillz: 0,
@@ -183,28 +160,8 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   const categoryId = await ensureCategory(p.categories?.[0]);
   const brandLineId = await ensureBrand(p.brand_id, p.brand_name);
 
-  const imgs: string[] = [];
-  if (!SKIP_IMAGES) {
-    const mainImg = p.main_image_url_full;
-    if (mainImg) {
-      const local = await downloadImage(mainImg, p.id, 0);
-      if (local) {
-        imgs.push(local);
-        result.imagesDownloaded += 1;
-      }
-    }
-    const photoList = p.photos ?? [];
-    for (let i = 0; i < photoList.length; i++) {
-      const photo = photoList[i];
-      const url = photo?.photo_url_full ?? photo?.photo_url;
-      if (!url || url === p.main_image_url_full) continue;
-      const local = await downloadImage(url, p.id, i + 1);
-      if (local) {
-        imgs.push(local);
-        result.imagesDownloaded += 1;
-      }
-    }
-  }
+  const imgs = collectImageUrls(p);
+  result.imagesDownloaded += imgs.length;
 
   const billzShort = p.id.replace(/-/g, "").slice(0, 8);
   const baseSlug = slugify(p.name) || "product";
@@ -213,7 +170,7 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   const sku = (rawSku ? `${rawSku}-${billzShort}` : billzShort).slice(0, 64);
 
   const existing = await db
-    .select({ id: products.id, images: products.images })
+    .select({ id: products.id })
     .from(products)
     .where(eq(products.billzId, p.id))
     .limit(1);
@@ -229,7 +186,7 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
     oldPriceTiyin,
     stock,
     isVisible,
-    images: imgs.length > 0 ? imgs : existing[0]?.images ?? [],
+    images: imgs,
     billzId: p.id,
     barcode: p.barcode || null,
     billzUpdatedAt: p.updated_at ? new Date(p.updated_at.replace(" ", "T") + "Z") : null,

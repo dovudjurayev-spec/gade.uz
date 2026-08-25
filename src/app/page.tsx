@@ -44,20 +44,14 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Video — mobile below text, desktop right */}
-        <div className="relative w-full h-[52vh] md:h-auto md:min-h-0 md:order-2 overflow-hidden">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            poster="/hero-animation-poster.png"
-            className="absolute inset-0 h-full w-full object-cover object-top md:object-right [filter:brightness(1.18)_contrast(1.08)_saturate(1.08)]"
-          >
-            <source src="/hero-animation.webm" type="video/webm" />
-            <source src="/hero-animation.mp4" type="video/mp4" />
-          </video>
+        {/* Animation — mobile below text, desktop right */}
+        <div className="relative w-full h-[52vh] md:h-auto md:min-h-0 md:order-2 overflow-hidden bg-white">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/hero-animation.webp"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-top md:object-right"
+          />
         </div>
       </section>
 

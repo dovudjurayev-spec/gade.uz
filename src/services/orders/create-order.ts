@@ -3,6 +3,7 @@ import { z } from "zod";
 import { db } from "@/db/client";
 import { customers, orderItems, orders, outboundQueue, products } from "@/db/schema";
 import { normalizePhoneUz } from "@/lib/phone";
+import { getCurrentCustomer } from "@/lib/customer-auth";
 import {
   calculateCourierPriceTiyin,
   isWithinDeliveryZone,
@@ -115,16 +116,28 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
       ? "pending_payment"
       : "confirmed";
 
+  const current = await getCurrentCustomer();
+
   const result = await db.transaction(async (tx) => {
-    // upsert customer
-    const [customer] = await tx
-      .insert(customers)
-      .values({ phone, name: data.name })
-      .onConflictDoUpdate({
-        target: customers.phone,
-        set: { name: data.name },
-      })
-      .returning();
+    let customer: { id: number } | undefined;
+    if (current) {
+      const [updated] = await tx
+        .update(customers)
+        .set({ name: data.name, phone })
+        .where(eq(customers.id, current.id))
+        .returning({ id: customers.id });
+      customer = updated;
+    } else {
+      const [upserted] = await tx
+        .insert(customers)
+        .values({ phone, name: data.name })
+        .onConflictDoUpdate({
+          target: customers.phone,
+          set: { name: data.name },
+        })
+        .returning({ id: customers.id });
+      customer = upserted;
+    }
 
     // monotonic order number: yy + 6-digit sequence, based on id
     const [inserted] = await tx

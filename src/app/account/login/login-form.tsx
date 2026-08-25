@@ -1,19 +1,31 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Step = "phone" | "code";
+type Mode = "login" | "register";
+type RegisterStep = "name" | "credentials" | "code";
+
+const STEP_INDEX: Record<RegisterStep, number> = { name: 1, credentials: 2, code: 3 };
+const STEP_LABEL: Record<RegisterStep, string> = {
+  name: "Имя",
+  credentials: "Данные для входа",
+  code: "Код из письма",
+};
 
 export function LoginForm() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("phone");
-  const [phone, setPhone] = useState("+998 ");
+  const [mode, setMode] = useState<Mode>("login");
+  const [registerStep, setRegisterStep] = useState<RegisterStep>("name");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [cooldown, setCooldown] = useState(0);
-  const [devCode, setDevCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -21,29 +33,59 @@ export function LoginForm() {
     return () => clearTimeout(t);
   }, [cooldown]);
 
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setRegisterStep("name");
+    setCode("");
+  }
+
+  async function loginSubmit() {
+    setError(null);
+    setPending(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        if (json.error === "invalid_credentials") setError("Неверный email или пароль");
+        else setError("Ошибка");
+        return;
+      }
+      router.push("/account");
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function requestCode() {
     setError(null);
     setPending(true);
     try {
-      const res = await fetch("/api/auth/otp/request", {
+      const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(" ");
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ email, password, name: fullName }),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        if (json.error === "cooldown") {
+        if (json.error === "email_taken") setError("Аккаунт с таким email уже существует");
+        else if (json.error === "cooldown") {
           setCooldown(json.retryAfterSec ?? 60);
-          setError(`Подождите ${json.retryAfterSec ?? 60} сек и попробуйте снова`);
-          setStep("code");
-        } else if (json.error === "invalid_phone") setError("Введите номер в формате +998 XX XXX XX XX");
-        else if (json.error === "send_failed") setError("Не удалось отправить SMS. Попробуйте позже");
+          setError(`Код уже отправлен — подождите ${json.retryAfterSec ?? 60} сек`);
+          setRegisterStep("code");
+        } else if (json.error === "send_failed") setError("Не удалось отправить письмо. Попробуйте позже");
+        else if (json.error === "bad_request") setError("Проверьте поля: email и пароль (мин. 8 символов)");
         else setError("Ошибка");
-      } else {
-        setStep("code");
-        setCooldown(json.cooldownSec ?? 60);
-        if (json.devCode) setDevCode(json.devCode);
+        return;
       }
+      setRegisterStep("code");
+      setCooldown(json.cooldownSec ?? 60);
     } finally {
       setPending(false);
     }
@@ -53,21 +95,22 @@ export function LoginForm() {
     setError(null);
     setPending(true);
     try {
-      const res = await fetch("/api/auth/otp/verify", {
+      const res = await fetch("/api/auth/register/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, code }),
+        body: JSON.stringify({ email, code }),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
         if (json.error === "invalid") setError("Неверный код");
-        else if (json.error === "expired" || json.error === "no_code") setError("Код истёк, запросите новый");
+        else if (json.error === "no_code") setError("Код истёк или не найден — запросите новый");
         else if (json.error === "too_many_attempts") setError("Слишком много попыток. Запросите новый код");
+        else if (json.error === "email_taken") setError("Аккаунт с таким email уже существует");
         else setError("Ошибка");
-      } else {
-        router.push("/account");
-        router.refresh();
+        return;
       }
+      router.push("/account");
+      router.refresh();
     } finally {
       setPending(false);
     }
@@ -75,49 +118,178 @@ export function LoginForm() {
 
   return (
     <div className="space-y-4">
-      <input
-        type="tel"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        placeholder="+998 __ ___ __ __"
-        disabled={step === "code"}
-        className="w-full h-12 border px-3"
-      />
-      {step === "code" && devCode && (
-        <div className="text-xs bg-yellow-50 border border-yellow-300 p-2 rounded">
-          DEV-режим: код <span className="font-mono font-bold">{devCode}</span> (SMS не отправляется без Eskiz-креденшлов)
-        </div>
-      )}
-      {step === "code" && (
-        <input
-          type="text"
-          inputMode="numeric"
-          pattern="\d{6}"
-          maxLength={6}
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-          placeholder="Код из SMS"
-          className="w-full h-12 border px-3 tracking-widest text-center"
-          autoFocus
-        />
-      )}
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      {step === "phone" ? (
-        <button onClick={requestCode} disabled={pending} className="w-full h-12 bg-brand text-white uppercase tracking-widest text-sm disabled:bg-neutral-400">
-          {pending ? "Отправляем..." : "Получить код"}
+      <div className="flex border">
+        <button
+          type="button"
+          onClick={() => switchMode("login")}
+          className={`flex-1 h-10 text-xs uppercase tracking-widest ${mode === "login" ? "bg-brand text-white" : "text-neutral-600"}`}
+        >
+          Вход
         </button>
-      ) : (
-        <div className="space-y-2">
-          <button onClick={verifyCode} disabled={pending || code.length !== 6} className="w-full h-12 bg-brand text-white uppercase tracking-widest text-sm disabled:bg-neutral-400">
-            {pending ? "Проверяем..." : "Войти"}
-          </button>
-          <div className="flex items-center justify-between text-xs text-neutral-500">
-            <button onClick={() => { setStep("phone"); setCode(""); setError(null); }} className="underline">Изменить номер</button>
-            <button onClick={requestCode} disabled={pending || cooldown > 0} className="underline disabled:no-underline disabled:text-neutral-400">
-              {cooldown > 0 ? `Отправить ещё раз (${cooldown})` : "Отправить ещё раз"}
-            </button>
+        <button
+          type="button"
+          onClick={() => switchMode("register")}
+          className={`flex-1 h-10 text-xs uppercase tracking-widest ${mode === "register" ? "bg-brand text-white" : "text-neutral-600"}`}
+        >
+          Регистрация
+        </button>
+      </div>
+
+      {mode === "register" && (
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-[10px] uppercase tracking-widest text-neutral-500">
+            <span>Шаг {STEP_INDEX[registerStep]} из 3</span>
+            <span>{STEP_LABEL[registerStep]}</span>
+          </div>
+          <div className="h-1 bg-neutral-200 overflow-hidden">
+            <div
+              className="h-full bg-brand transition-all duration-300"
+              style={{ width: `${(STEP_INDEX[registerStep] / 3) * 100}%` }}
+            />
           </div>
         </div>
+      )}
+
+      {mode === "login" && (
+        <>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            autoComplete="email"
+            className="w-full h-12 border px-3"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Пароль"
+            autoComplete="current-password"
+            className="w-full h-12 border px-3"
+          />
+          {error && <div className="text-sm text-red-600">{error}</div>}
+          <button
+            onClick={loginSubmit}
+            disabled={pending || !email || !password}
+            className="w-full h-12 bg-brand text-white uppercase tracking-widest text-sm disabled:bg-neutral-400"
+          >
+            {pending ? "..." : "Войти"}
+          </button>
+          <div className="text-center">
+            <Link href="/account/password/forgot" className="text-xs text-neutral-500 underline">
+              Забыли пароль?
+            </Link>
+          </div>
+        </>
+      )}
+
+      {mode === "register" && registerStep === "name" && (
+        <>
+          <input
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            placeholder="Имя"
+            autoComplete="given-name"
+            className="w-full h-12 border px-3"
+          />
+          <input
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            placeholder="Фамилия (необязательно)"
+            autoComplete="family-name"
+            className="w-full h-12 border px-3"
+          />
+          <button
+            onClick={() => setRegisterStep("credentials")}
+            disabled={!firstName.trim()}
+            className="w-full h-12 bg-brand text-white uppercase tracking-widest text-sm disabled:bg-neutral-400"
+          >
+            Далее
+          </button>
+        </>
+      )}
+
+      {mode === "register" && registerStep === "credentials" && (
+        <>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            autoComplete="email"
+            className="w-full h-12 border px-3"
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Пароль (мин. 8 символов)"
+            autoComplete="new-password"
+            className="w-full h-12 border px-3"
+          />
+          {error && <div className="text-sm text-red-600">{error}</div>}
+          <button
+            onClick={requestCode}
+            disabled={pending || !email || password.length < 8}
+            className="w-full h-12 bg-brand text-white uppercase tracking-widest text-sm disabled:bg-neutral-400"
+          >
+            {pending ? "Отправляем код..." : "Отправить код"}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setRegisterStep("name"); setError(null); }}
+            className="w-full text-xs text-neutral-500 underline"
+          >
+            Назад
+          </button>
+        </>
+      )}
+
+      {mode === "register" && registerStep === "code" && (
+        <>
+          <div className="text-xs text-neutral-500">
+            Код отправлен на <span className="font-medium text-neutral-800">{email}</span>
+          </div>
+          <input
+            type="text"
+            inputMode="numeric"
+            pattern="\d{6}"
+            maxLength={6}
+            value={code}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+            placeholder="Код из письма"
+            className="w-full h-12 border px-3 tracking-widest text-center"
+            autoFocus
+          />
+          {error && <div className="text-sm text-red-600">{error}</div>}
+          <button
+            onClick={verifyCode}
+            disabled={pending || code.length !== 6}
+            className="w-full h-12 bg-brand text-white uppercase tracking-widest text-sm disabled:bg-neutral-400"
+          >
+            {pending ? "Проверяем..." : "Подтвердить"}
+          </button>
+          <div className="flex items-center justify-between text-xs text-neutral-500">
+            <button
+              type="button"
+              onClick={() => { setRegisterStep("credentials"); setError(null); setCode(""); }}
+              className="underline"
+            >
+              Изменить email
+            </button>
+            <button
+              type="button"
+              onClick={requestCode}
+              disabled={pending || cooldown > 0}
+              className="underline disabled:no-underline disabled:text-neutral-400"
+            >
+              {cooldown > 0 ? `Отправить снова (${cooldown})` : "Отправить снова"}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

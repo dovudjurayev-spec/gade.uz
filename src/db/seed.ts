@@ -7,10 +7,15 @@ import { brandLines, categories, products } from "./schema";
 const url = process.env.DATABASE_URL;
 if (!url) throw new Error("DATABASE_URL is not set");
 
-const sql = postgres(url, { max: 1 });
+const sql = postgres(url, { max: 1, ssl: "require" });
 const db = drizzle(sql, { schema });
 
 async function seed() {
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_SEED !== "1") {
+    throw new Error(
+      "Refusing to seed in production. Set ALLOW_SEED=1 to override (destroys existing catalog data).",
+    );
+  }
   console.log("Wiping catalog tables...");
   await sql`TRUNCATE TABLE products, brand_lines, categories, order_items, orders, favorites, payment_transactions RESTART IDENTITY CASCADE`;
 

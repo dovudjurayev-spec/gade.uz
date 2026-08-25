@@ -3,20 +3,18 @@ import Image from "next/image";
 import { ShoppingBag, User, Heart } from "lucide-react";
 import { CartBadge } from "./cart-badge";
 import { SearchOverlay } from "./search-overlay";
+import { listCategoriesWithProducts } from "@/repositories/products";
 
 type Section = { href: string; label: string };
 
-const sections: Section[] = [
-  { href: "/catalog?sort=new", label: "Новинки" },
-  { href: "/catalog?sort=popular", label: "Хиты продаж" },
-  { href: "/catalog?category=makeup", label: "Макияж" },
-  { href: "/catalog?category=skincare", label: "Уход" },
-  { href: "/catalog?category=fragrances", label: "Ароматы" },
-  { href: "/catalog?category=sets", label: "Наборы" },
-  { href: "/catalog?sale=1", label: "Аутлет" },
-];
-
-export function SiteHeader() {
+export async function SiteHeader() {
+  const cats = await listCategoriesWithProducts();
+  const sections: Section[] = [
+    { href: "/catalog?sort=new", label: "Новинки" },
+    { href: "/catalog?sort=popular", label: "Хиты продаж" },
+    ...cats.map((c) => ({ href: `/catalog?category=${c.slug}`, label: c.name })),
+    { href: "/catalog?sale=1", label: "Аутлет" },
+  ];
   return (
     <header className="sticky top-0 z-40 w-full bg-white">
       {/* Announcement */}

@@ -11,8 +11,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const customer = await getCurrentCustomer();
   if (!customer) redirect("/account/login");
 
-  const displayName = customer.name || formatPhoneUz(customer.phone);
-  const initial = (customer.name?.trim()?.[0] || customer.phone.slice(-2, -1) || "G").toUpperCase();
+  const displayName = customer.name || customer.email || (customer.phone ? formatPhoneUz(customer.phone) : "Аккаунт");
+  const initial = (customer.name?.trim()?.[0] || customer.email?.[0] || customer.phone?.slice(-2, -1) || "G").toUpperCase();
 
   return (
     <div className="mx-auto max-w-6xl px-4 md:px-8 py-10 md:py-14 md:flex md:items-start md:gap-10">

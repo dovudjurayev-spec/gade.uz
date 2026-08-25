@@ -12,6 +12,7 @@ type Product = {
   hairType: string;
   skinType: string;
   images: string[];
+  imageFit: "contain" | "cover";
   isFeatured: boolean;
   isNew: boolean;
   isVisible: boolean;
@@ -57,6 +58,29 @@ export function ProductForm({ product }: { product: Product }) {
       </div>
       <Field label="Изображения (по одному URL/пути на строку)">
         <textarea value={imagesText} onChange={(e) => setImagesText(e.target.value)} rows={4} className="w-full border p-3 font-mono text-xs" />
+      </Field>
+
+      <Field label="Отображение фото">
+        <div className="flex gap-4 text-sm">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="imageFit"
+              checked={form.imageFit === "contain"}
+              onChange={() => set("imageFit", "contain")}
+            />
+            Вписать (белый фон)
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="imageFit"
+              checked={form.imageFit === "cover"}
+              onChange={() => set("imageFit", "cover")}
+            />
+            Заполнить (без белых полей)
+          </label>
+        </div>
       </Field>
 
       <div className="flex gap-6">

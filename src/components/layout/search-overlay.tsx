@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Search, X, ArrowRight, TrendingUp } from "lucide-react";
+import { Search, X, ArrowRight } from "lucide-react";
 import { formatPrice } from "@/lib/money";
 
 type ProductHit = {
@@ -11,13 +11,12 @@ type ProductHit = {
   slug: string;
   name: string;
   image: string | null;
+  imageFit: "contain" | "cover";
   priceTiyin: number;
   brandLine: string | null;
 };
 type CategoryHit = { slug: string; name: string };
 type Results = { products: ProductHit[]; categories: CategoryHit[] };
-
-const POPULAR = ["Vanilla Black", "Крем для лица", "Шампунь", "Набор"];
 
 export function SearchOverlay() {
   const [open, setOpen] = useState(false);
@@ -150,27 +149,6 @@ export function SearchOverlay() {
             </form>
 
             <div className="mx-auto max-w-3xl px-4 md:px-8 pb-8 max-h-[70vh] overflow-y-auto">
-              {!hasQuery && (
-                <div>
-                  <div className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-3">
-                    Популярные запросы
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {POPULAR.map((term) => (
-                      <button
-                        key={term}
-                        type="button"
-                        onClick={() => setQ(term)}
-                        className="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-neutral-200 text-sm text-neutral-700 hover:border-brand-accent hover:text-brand-accent transition-colors cursor-pointer"
-                      >
-                        <TrendingUp className="h-3.5 w-3.5" strokeWidth={1.5} />
-                        {term}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {hasQuery && !loading && !hasResults && (
                 <div className="text-center py-12 text-neutral-500 text-sm">
                   Ничего не найдено по запросу «{q}»
@@ -227,10 +205,10 @@ export function SearchOverlay() {
                                   active ? "bg-brand-accent-soft" : "hover:bg-neutral-50"
                                 }`}
                               >
-                                <div className="h-12 w-12 shrink-0 bg-neutral-100 overflow-hidden">
+                                <div className="h-12 w-12 shrink-0 bg-white overflow-hidden">
                                   {p.image ? (
                                     // eslint-disable-next-line @next/next/no-img-element
-                                    <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+                                    <img src={p.image} alt={p.name} className={p.imageFit === "cover" ? "h-full w-full object-cover" : "h-full w-full object-contain p-1"} />
                                   ) : (
                                     <div className="grid place-items-center h-full text-[10px] text-neutral-400">GADE</div>
                                   )}

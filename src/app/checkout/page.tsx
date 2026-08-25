@@ -45,7 +45,7 @@ export default async function CheckoutPage() {
       <h1 className="text-2xl md:text-3xl mb-6">Оформление заказа</h1>
       <CheckoutForm
         initialName={customer?.name ?? ""}
-        initialPhone={customer ? formatPhoneUz(customer.phone) : ""}
+        initialPhone={customer?.phone ? formatPhoneUz(customer.phone) : ""}
         initialAddress={initialAddress}
         savedAddresses={addresses}
         tariff={tariff}

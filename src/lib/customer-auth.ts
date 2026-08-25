@@ -1,20 +1,46 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
-import { customers, sessions } from "@/db/schema";
+import { customers, passwordResetTokens, sessions } from "@/db/schema";
 import { env } from "./env";
 
 const COOKIE_NAME = "gade_customer";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 дней
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 час
 
-export async function findOrCreateCustomer(phone: string): Promise<{ id: number; phone: string; name: string | null }> {
-  const existing = await db.query.customers.findFirst({ where: eq(customers.phone, phone) });
-  if (existing) return { id: existing.id, phone: existing.phone, name: existing.name };
-  const inserted = await db.insert(customers).values({ phone }).returning();
+export function hashPassword(password: string): string {
+  const salt = randomBytes(16);
+  const hash = scryptSync(password, salt, 64);
+  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+}
+
+export function verifyPassword(password: string, stored: string): boolean {
+  const [scheme, saltHex, hashHex] = stored.split("$");
+  if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
+  const salt = Buffer.from(saltHex, "hex");
+  const expected = Buffer.from(hashHex, "hex");
+  const actual = scryptSync(password, salt, expected.length);
+  if (actual.length !== expected.length) return false;
+  return timingSafeEqual(actual, expected);
+}
+
+export function normalizeEmail(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+export async function findCustomerByEmail(email: string) {
+  return db.query.customers.findFirst({ where: eq(customers.email, email) });
+}
+
+export async function createCustomerWithPassword(email: string, password: string, name?: string) {
+  const inserted = await db
+    .insert(customers)
+    .values({ email, passwordHash: hashPassword(password), name: name ?? null })
+    .returning();
   const row = inserted[0];
   if (!row) throw new Error("Failed to create customer");
-  return { id: row.id, phone: row.phone, name: row.name };
+  return row;
 }
 
 export async function createCustomerSession(customerId: number): Promise<void> {
@@ -38,7 +64,7 @@ export async function destroyCustomerSession(): Promise<void> {
   cookieStore.delete(COOKIE_NAME);
 }
 
-export async function getCurrentCustomer(): Promise<{ id: number; phone: string; name: string | null; email: string | null } | null> {
+export async function getCurrentCustomer(): Promise<{ id: number; phone: string | null; name: string | null; email: string | null } | null> {
   const cookieStore = await cookies();
   const id = cookieStore.get(COOKIE_NAME)?.value;
   if (!id) return null;
@@ -49,4 +75,35 @@ export async function getCurrentCustomer(): Promise<{ id: number; phone: string;
   const c = await db.query.customers.findFirst({ where: eq(customers.id, session.customerId) });
   if (!c) return null;
   return { id: c.id, phone: c.phone, name: c.name, email: c.email };
+}
+
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+export async function createPasswordResetToken(customerId: number): Promise<string> {
+  const token = randomBytes(32).toString("base64url");
+  await db.insert(passwordResetTokens).values({
+    customerId,
+    tokenHash: hashToken(token),
+    expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+  });
+  return token;
+}
+
+export async function consumePasswordResetToken(token: string, newPassword: string): Promise<{ ok: true } | { ok: false; error: "invalid" | "expired" }> {
+  const row = await db.query.passwordResetTokens.findFirst({
+    where: and(
+      eq(passwordResetTokens.tokenHash, hashToken(token)),
+      isNull(passwordResetTokens.usedAt),
+    ),
+  });
+  if (!row) return { ok: false, error: "invalid" };
+  if (row.expiresAt.getTime() < Date.now()) return { ok: false, error: "expired" };
+
+  await db.transaction(async (tx) => {
+    await tx.update(customers).set({ passwordHash: hashPassword(newPassword) }).where(eq(customers.id, row.customerId));
+    await tx.update(passwordResetTokens).set({ usedAt: new Date() }).where(eq(passwordResetTokens.id, row.id));
+  });
+  return { ok: true };
 }

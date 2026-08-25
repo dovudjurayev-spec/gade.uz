@@ -29,3 +29,8 @@ public/products/
 # drizzle (keep migrations, ignore cache)
 src/db/migrations/meta/_journal.tmp
 tsconfig.tsbuildinfo
+
+# deploy artifacts
+deploy/
+deploy.tar.gz
+

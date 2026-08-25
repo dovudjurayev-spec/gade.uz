@@ -13,7 +13,7 @@ export default async function AccountLoginPage() {
       <div className="w-full max-w-sm border p-6 space-y-4">
         <div className="text-center">
           <h1 className="text-xl font-sans">Вход в кабинет</h1>
-          <p className="text-xs text-neutral-500 mt-1">Введите номер — пришлём код в SMS</p>
+          <p className="text-xs text-neutral-500 mt-1">Введите email и пароль</p>
         </div>
         <LoginForm />
       </div>

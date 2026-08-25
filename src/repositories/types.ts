@@ -10,7 +10,10 @@ export type ProductListItem = {
   isNew: boolean;
   isFeatured: boolean;
   image: string | null;
+  imageFit: "contain" | "cover";
   brandLine: string | null;
+  categoryName?: string | null;
+  categorySlug?: string | null;
 };
 
 export type ProductDetail = ProductListItem & {

@@ -18,6 +18,9 @@ const envSchema = z.object({
   ESKIZ_PASSWORD: z.string().optional(),
   ESKIZ_FROM: z.string().optional(),
 
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().default("GADE.uz <no-reply@gade.uz>"),
+
   PAYME_MERCHANT_ID: z.string().optional(),
   PAYME_MERCHANT_KEY: z.string().optional(),
   CLICK_MERCHANT_ID: z.string().optional(),

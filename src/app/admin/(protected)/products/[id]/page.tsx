@@ -36,6 +36,7 @@ export default async function EditProduct({ params }: { params: Params }) {
           hairType: p.hairType ?? "",
           skinType: p.skinType ?? "",
           images: p.images ?? [],
+          imageFit: p.imageFit === "cover" ? "cover" : "contain",
           isFeatured: p.isFeatured,
           isNew: p.isNew,
           isVisible: p.isVisible,

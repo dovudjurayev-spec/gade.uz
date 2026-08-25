@@ -107,6 +107,7 @@ export const products = pgTable(
     isFeatured: boolean("is_featured").notNull().default(false),
     isNew: boolean("is_new").notNull().default(false),
     images: jsonb("images").$type<string[]>().notNull().default([]),
+    imageFit: varchar("image_fit", { length: 16 }).notNull().default("contain"),
     billzId: varchar("billz_id", { length: 64 }),
     barcode: varchar("barcode", { length: 64 }),
     billzUpdatedAt: timestamp("billz_updated_at", { withTimezone: true }),
@@ -132,13 +133,15 @@ export const customers = pgTable(
   "customers",
   {
     id: serial("id").primaryKey(),
-    phone: varchar("phone", { length: 20 }).notNull(),
+    phone: varchar("phone", { length: 20 }),
     name: varchar("name", { length: 200 }),
     email: varchar("email", { length: 200 }),
+    passwordHash: text("password_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    phoneIdx: uniqueIndex("customers_phone_idx").on(t.phone),
+    phoneIdx: uniqueIndex("customers_phone_idx").on(t.phone).where(sql`${t.phone} IS NOT NULL`),
+    emailIdx: uniqueIndex("customers_email_idx").on(t.email).where(sql`${t.email} IS NOT NULL`),
   }),
 );
 
@@ -175,6 +178,40 @@ export const otpCodes = pgTable(
   },
   (t) => ({
     phoneIdx: index("otp_codes_phone_idx").on(t.phone),
+  }),
+);
+
+export const emailVerifications = pgTable(
+  "email_verifications",
+  {
+    id: serial("id").primaryKey(),
+    email: varchar("email", { length: 200 }).notNull(),
+    codeHash: varchar("code_hash", { length: 128 }).notNull(),
+    name: varchar("name", { length: 200 }),
+    passwordHash: text("password_hash").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    emailIdx: index("email_verifications_email_idx").on(t.email),
+  }),
+);
+
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: serial("id").primaryKey(),
+    customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+    tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    hashIdx: uniqueIndex("password_reset_tokens_hash_idx").on(t.tokenHash),
+    customerIdx: index("password_reset_tokens_customer_idx").on(t.customerId),
   }),
 );
 

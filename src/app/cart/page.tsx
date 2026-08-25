@@ -33,10 +33,10 @@ export default function CartPage() {
         <div className="space-y-4">
           {items.map((item) => (
             <div key={item.productId} className="flex gap-4 border p-4">
-              <div className="w-24 h-24 bg-neutral-100 flex-shrink-0">
+              <div className="w-24 h-24 bg-white flex-shrink-0">
                 {item.image && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                  <img src={item.image} alt={item.name} className="h-full w-full object-contain p-2" />
                 )}
               </div>
               <div className="flex-1 min-w-0">

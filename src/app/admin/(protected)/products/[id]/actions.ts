@@ -15,6 +15,7 @@ type UpdateInput = {
   hairType: string;
   skinType: string;
   images: string[];
+  imageFit: "contain" | "cover";
   isFeatured: boolean;
   isNew: boolean;
   isVisible: boolean;
@@ -38,6 +39,7 @@ export async function updateProductAction(input: UpdateInput) {
       hairType: input.hairType || null,
       skinType: input.skinType || null,
       images: input.images,
+      imageFit: input.imageFit === "cover" ? "cover" : "contain",
       isFeatured: input.isFeatured,
       isNew: input.isNew,
       isVisible: input.isVisible,

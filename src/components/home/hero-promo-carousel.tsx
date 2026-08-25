@@ -33,10 +33,10 @@ export function HeroPromoCarousel({ products }: { products: ProductListItem[] })
         key={p.id}
         className="group flex items-center gap-4 bg-white rounded-2xl p-3 md:p-4 hover:shadow-lg transition-shadow animate-in fade-in duration-500"
       >
-        <div className="relative h-24 w-24 shrink-0 rounded-xl bg-neutral-100 overflow-hidden">
+        <div className="relative h-24 w-24 shrink-0 rounded-xl bg-white overflow-hidden">
           {p.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={p.image} alt={p.name} className="h-full w-full object-cover" />
+            <img src={p.image} alt={p.name} className={p.imageFit === "cover" ? "h-full w-full object-cover" : "h-full w-full object-contain p-2"} />
           ) : (
             <div className="h-full w-full grid place-items-center text-neutral-400 text-[10px]">
               GADE

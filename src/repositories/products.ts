@@ -39,14 +39,19 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     if (qCond) conditions.push(qCond);
   }
 
+  const groupByCategory =
+    (filters.sort === "popular" || !filters.sort) && !filters.categorySlug;
+
   const orderBy = (() => {
     switch (filters.sort) {
-      case "price_asc": return asc(products.priceTiyin);
-      case "price_desc": return desc(products.priceTiyin);
-      case "new": return desc(products.createdAt);
+      case "price_asc": return [asc(products.priceTiyin)];
+      case "price_desc": return [desc(products.priceTiyin)];
+      case "new": return [desc(products.createdAt)];
       case "popular":
       default:
-        return desc(products.isFeatured);
+        return groupByCategory
+          ? [asc(categories.sortOrder), asc(categories.name), desc(products.isFeatured), asc(products.name)]
+          : [desc(products.isFeatured)];
     }
   })();
 
@@ -63,12 +68,16 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       isNew: products.isNew,
       isFeatured: products.isFeatured,
       images: products.images,
+      imageFit: products.imageFit,
       brandLine: brandLines.name,
+      categoryName: categories.name,
+      categorySlug: categories.slug,
     })
     .from(products)
     .leftJoin(brandLines, eq(products.brandLineId, brandLines.id))
+    .leftJoin(categories, eq(products.categoryId, categories.id))
     .where(and(...conditions))
-    .orderBy(orderBy)
+    .orderBy(...orderBy)
     .limit(filters.limit ?? 48)
     .offset(filters.offset ?? 0);
 
@@ -84,7 +93,10 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     isNew: r.isNew,
     isFeatured: r.isFeatured,
     image: firstImage(r.images),
+    imageFit: (r.imageFit === "cover" ? "cover" : "contain"),
     brandLine: r.brandLine,
+    categoryName: r.categoryName,
+    categorySlug: r.categorySlug,
   }));
 }
 
@@ -107,6 +119,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
       isNew: products.isNew,
       isFeatured: products.isFeatured,
       images: products.images,
+      imageFit: products.imageFit,
       categorySlug: categories.slug,
       brandLineSlug: brandLines.slug,
       brandLine: brandLines.name,
@@ -123,6 +136,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
   return {
     ...p,
     image: firstImage(p.images),
+    imageFit: (p.imageFit === "cover" ? "cover" : "contain"),
     images: p.images ?? [],
   };
 }
@@ -189,4 +203,26 @@ export async function listCategories(): Promise<CategoryNode[]> {
     .where(eq(categories.isVisible, true))
     .orderBy(asc(categories.sortOrder), asc(categories.name));
   return rows;
+}
+
+export async function listCategoriesWithProducts(): Promise<CategoryNode[]> {
+  const rows = await db
+    .selectDistinct({
+      id: categories.id,
+      slug: categories.slug,
+      name: categories.name,
+      parentId: categories.parentId,
+      sortOrder: categories.sortOrder,
+    })
+    .from(categories)
+    .innerJoin(products, eq(products.categoryId, categories.id))
+    .where(
+      and(
+        eq(categories.isVisible, true),
+        eq(products.isVisible, true),
+        isNull(products.deletedAt),
+      ),
+    )
+    .orderBy(asc(categories.sortOrder), asc(categories.name));
+  return rows.map(({ id, slug, name, parentId }) => ({ id, slug, name, parentId }));
 }

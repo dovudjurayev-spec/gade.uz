@@ -27,6 +27,7 @@ export async function GET(req: Request) {
       slug: p.slug,
       name: p.name,
       image: p.image,
+      imageFit: p.imageFit,
       priceTiyin: p.priceTiyin,
       brandLine: p.brandLine,
     })),

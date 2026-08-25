@@ -14,6 +14,7 @@ function getDb() {
     max: Number(process.env.DATABASE_POOL_MAX ?? 5),
     idle_timeout: 20,
     prepare: false,
+    ssl: "require",
   });
   _db = drizzle(queryClient, { schema });
   return _db;

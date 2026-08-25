@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "gade.uz" },
       { protocol: "https", hostname: "dev.gade.uz" },
+      { protocol: "https", hostname: "fra1.digitaloceanspaces.com" },
     ],
   },
   experimental: {

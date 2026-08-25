@@ -32,14 +32,17 @@ export function ProductCard({ product }: { product: ProductListItem }) {
       href={`/catalog/${product.slug}`}
       className="group flex h-full flex-col border border-neutral-200 hover:border-neutral-400 hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.25)] transition-all duration-300"
     >
-      <div className="relative aspect-square bg-neutral-100 overflow-hidden">
+      <div className="relative aspect-square bg-white overflow-hidden">
         {product.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={product.image}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={cn(
+              "h-full w-full group-hover:scale-105 transition-transform duration-500",
+              product.imageFit === "cover" ? "object-cover" : "object-contain p-4",
+            )}
           />
         ) : (
           <div className="h-full w-full grid place-items-center text-neutral-400 text-xs">GADE</div>

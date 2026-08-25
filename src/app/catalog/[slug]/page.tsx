@@ -56,10 +56,10 @@ export default async function ProductPage({ params }: { params: Params }) {
       />
 
       <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-        <div className="aspect-square bg-neutral-100">
+        <div className="aspect-square bg-white">
           {product.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+            <img src={product.image} alt={product.name} className={product.imageFit === "cover" ? "h-full w-full object-cover" : "h-full w-full object-contain p-6"} />
           ) : (
             <div className="h-full w-full grid place-items-center text-neutral-400">GADE</div>
           )}
