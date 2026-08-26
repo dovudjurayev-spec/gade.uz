@@ -15,6 +15,8 @@ export type ProductListItem = {
   shortDescription: string | null;
   categoryName?: string | null;
   categorySlug?: string | null;
+  leafCategoryName?: string | null;
+  leafCategorySlug?: string | null;
 };
 
 export type ProductDetail = ProductListItem & {

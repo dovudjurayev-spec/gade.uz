@@ -1,7 +1,7 @@
 import { listProducts, listCategories, countProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
 import Link from "next/link";
-import { Check, TrendingUp, ArrowDownUp, X, Package, Percent, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, TrendingUp, ArrowDownUp, X, Package, Percent, Zap } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -56,12 +56,21 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
     onSale: sp.sale === "1",
     q: sp.q,
   };
-  const [products, cats, total] = await Promise.all([
-    listProducts({ ...filters, limit: PAGE_SIZE, offset: (pageNum - 1) * PAGE_SIZE }),
-    listCategories(),
+  // Кумулятивная загрузка: страница N показывает первые N * PAGE_SIZE товаров.
+  // Так «Показать ещё» = /catalog?page=N+1 и добавляет ровно PAGE_SIZE новых карточек,
+  // сохраняя все ранее показанные.
+  const [products, allCats, total] = await Promise.all([
+    listProducts({ ...filters, limit: PAGE_SIZE * pageNum, offset: 0 }),
+    listCategories({ includeSubcategories: true }),
     countProducts(filters),
   ]);
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const rootCats = allCats.filter((c) => c.parentId == null);
+  const activeCat = sp.category ? allCats.find((c) => c.slug === sp.category) ?? null : null;
+  const activeRootId = activeCat?.parentId ?? activeCat?.id ?? null;
+  const subCats = activeRootId ? allCats.filter((c) => c.parentId === activeRootId) : [];
+  const cats = rootCats;
+  const hasMore = products.length < total;
+  const remaining = Math.max(0, total - products.length);
 
   const activeSort: Sort = sp.sort ?? "popular";
   const activeCategory = sp.category ?? "";
@@ -110,12 +119,13 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             <CategoryChip
               key={c.id}
               href={buildHref(sp, { category: c.slug })}
-              active={activeCategory === c.slug}
+              active={activeCategory === c.slug || activeCat?.parentId === c.id}
               label={c.name}
             />
           ))}
         </div>
       </div>
+
 
       {/* Toolbar: filter toggles + sort */}
       <div className="mb-8 pb-6 border-b border-neutral-200 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:gap-3">
@@ -187,6 +197,43 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             const groupByCategory =
               (activeSort === "popular") && !activeCategory && !sp.q;
             if (!groupByCategory) {
+              // Внутри выбранной корневой категории показываем подзаголовки подкатегорий,
+              // но встраиваем их в ту же сетку через col-span-full — ряды карточек текут
+              // непрерывно, последний ряд заполняется до конца.
+              const isRootWithSubs =
+                activeCat && activeCat.parentId == null && subCats.length > 0;
+              if (isRootWithSubs && activeSort === "popular") {
+                type Cell = { kind: "header"; key: string; label: string } | { kind: "card"; key: string; product: (typeof products)[number] };
+                const cells: Cell[] = [];
+                let currentSlug: string | null | undefined = undefined;
+                for (const p of products) {
+                  const leafName = p.leafCategoryName ?? activeCat!.name;
+                  const leafSlug = p.leafCategorySlug ?? activeCat!.slug;
+                  if (leafSlug !== currentSlug) {
+                    currentSlug = leafSlug;
+                    cells.push({ kind: "header", key: `h-${leafSlug ?? "misc"}-${cells.length}`, label: leafName });
+                  }
+                  cells.push({ kind: "card", key: `p-${p.id}`, product: p });
+                }
+                if (cells.some((c) => c.kind === "header")) {
+                  return (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {cells.map((c) =>
+                        c.kind === "header" ? (
+                          <h3
+                            key={c.key}
+                            className="col-span-full text-sm uppercase tracking-widest text-neutral-600 mt-6 first:mt-0"
+                          >
+                            {c.label}
+                          </h3>
+                        ) : (
+                          <ProductCard key={c.key} product={c.product} />
+                        ),
+                      )}
+                    </div>
+                  );
+                }
+              }
               return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {products.map((p) => (
@@ -199,124 +246,77 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             for (const p of products) {
               const name = p.categoryName ?? "Прочее";
               const slug = p.categorySlug ?? null;
-              const last = groups[groups.length - 1];
-              if (last && last.name === name) last.items.push(p);
+              const existing = groups.find((g) => (g.slug ?? "") === (slug ?? ""));
+              if (existing) existing.items.push(p);
               else groups.push({ name, slug, items: [p] });
             }
             return (
               <div className="space-y-10">
-                {groups.map((g, i) => (
-                  <section key={`${g.slug ?? "misc"}-${i}`}>
-                    <div className="mb-4 flex items-baseline justify-between gap-4">
-                      <h2 className="text-xl md:text-2xl font-light tracking-tight">{g.name}</h2>
-                      {g.slug && (
-                        <Link
-                          href={buildHref(sp, { category: g.slug })}
-                          className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
-                        >
-                          Смотреть все →
-                        </Link>
+                {groups.map((g, i) => {
+                  // Разбиваем на подгруппы по leafCategoryName (внутренний порядок сохраняется из orderBy)
+                  const sub: { name: string; slug: string | null; items: typeof g.items }[] = [];
+                  for (const p of g.items) {
+                    const leafName = p.leafCategoryName ?? g.name;
+                    const leafSlug = p.leafCategorySlug ?? g.slug;
+                    const existing = sub.find((s) => s.slug === leafSlug);
+                    if (existing) existing.items.push(p);
+                    else sub.push({ name: leafName, slug: leafSlug, items: [p] });
+                  }
+                  while (sub.length > 1 && sub[sub.length - 1]!.items.length < 4) {
+                    const tail = sub.pop()!;
+                    sub[sub.length - 1]!.items.push(...tail.items);
+                  }
+                  const hasSubs = sub.length > 1 || (sub.length === 1 && sub[0]!.slug !== g.slug);
+                  return (
+                    <section key={`${g.slug ?? "misc"}-${i}`}>
+                      <div className="mb-4">
+                        <h2 className="text-xl md:text-2xl font-light tracking-tight">{g.name}</h2>
+                      </div>
+                      {hasSubs ? (
+                        <div className="space-y-8">
+                          {sub.map((s, j) => (
+                            <div key={`${s.slug ?? "misc"}-${j}`}>
+                              <div className="mb-3">
+                                <h3 className="text-sm uppercase tracking-widest text-neutral-600">{s.name}</h3>
+                              </div>
+                              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {s.items.map((p) => (
+                                  <ProductCard key={p.id} product={p} />
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                          {g.items.map((p) => (
+                            <ProductCard key={p.id} product={p} />
+                          ))}
+                        </div>
                       )}
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {g.items.map((p) => (
-                        <ProductCard key={p.id} product={p} />
-                      ))}
-                    </div>
-                  </section>
-                ))}
+                    </section>
+                  );
+                })}
               </div>
             );
           })()}
-          {totalPages > 1 && (
-            <Pagination current={pageNum} total={totalPages} buildPageHref={(n) => buildHref(sp, { page: n })} />
+          {hasMore && (
+            <div className="mt-12 flex justify-center">
+              <Link
+                href={buildHref(sp, { page: pageNum + 1 })}
+                className="inline-flex items-center gap-2 h-11 px-6 text-xs uppercase tracking-widest border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
+                scroll={false}
+              >
+                Показать ещё
+                <span className="text-neutral-500 group-hover:text-neutral-300 normal-case tracking-normal">
+                  ({Math.min(PAGE_SIZE, remaining)} из {remaining})
+                </span>
+              </Link>
+            </div>
           )}
         </>
       )}
     </div>
-  );
-}
-
-function Pagination({
-  current,
-  total,
-  buildPageHref,
-}: {
-  current: number;
-  total: number;
-  buildPageHref: (n: number) => string;
-}) {
-  const pages: (number | "...")[] = [];
-  const push = (v: number | "...") => {
-    if (pages[pages.length - 1] !== v) pages.push(v);
-  };
-  push(1);
-  for (let i = current - 1; i <= current + 1; i++) {
-    if (i > 1 && i < total) {
-      if (i > 2 && pages[pages.length - 1] !== i - 1) push("...");
-      push(i);
-    }
-  }
-  if (total > 1) {
-    if (current + 1 < total - 1) push("...");
-    push(total);
-  }
-
-  const linkBase =
-    "inline-flex items-center justify-center h-10 min-w-10 px-3 text-sm border transition-colors";
-
-  return (
-    <nav className="mt-12 flex items-center justify-center gap-1" aria-label="Пагинация">
-      {current > 1 ? (
-        <Link
-          href={buildPageHref(current - 1)}
-          className={`${linkBase} border-neutral-200 text-neutral-700 hover:border-neutral-900`}
-          aria-label="Предыдущая страница"
-        >
-          <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-        </Link>
-      ) : (
-        <span className={`${linkBase} border-neutral-100 text-neutral-300 cursor-not-allowed`} aria-hidden>
-          <ChevronLeft className="h-4 w-4" strokeWidth={1.5} />
-        </span>
-      )}
-      {pages.map((p, idx) =>
-        p === "..." ? (
-          <span key={`gap-${idx}`} className="px-2 text-neutral-400">
-            …
-          </span>
-        ) : p === current ? (
-          <span
-            key={p}
-            className={`${linkBase} border-neutral-900 bg-neutral-900 text-white`}
-            aria-current="page"
-          >
-            {p}
-          </span>
-        ) : (
-          <Link
-            key={p}
-            href={buildPageHref(p)}
-            className={`${linkBase} border-neutral-200 text-neutral-700 hover:border-neutral-900`}
-          >
-            {p}
-          </Link>
-        ),
-      )}
-      {current < total ? (
-        <Link
-          href={buildPageHref(current + 1)}
-          className={`${linkBase} border-neutral-200 text-neutral-700 hover:border-neutral-900`}
-          aria-label="Следующая страница"
-        >
-          <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-        </Link>
-      ) : (
-        <span className={`${linkBase} border-neutral-100 text-neutral-300 cursor-not-allowed`} aria-hidden>
-          <ChevronRight className="h-4 w-4" strokeWidth={1.5} />
-        </span>
-      )}
-    </nav>
   );
 }
 

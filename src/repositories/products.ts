@@ -1,4 +1,5 @@
-import { and, asc, desc, eq, gt, gte, ilike, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, ilike, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db/client";
 import { brandLines, categories, products } from "@/db/schema";
 import type { CategoryNode, ProductDetail, ProductFilters, ProductListItem } from "./types";
@@ -8,16 +9,26 @@ function firstImage(images: string[] | null | undefined): string | null {
   return images[0] ?? null;
 }
 
+async function resolveCategoryIds(slug: string): Promise<number[]> {
+  const cat = await db.query.categories.findFirst({
+    where: eq(categories.slug, slug),
+    columns: { id: true },
+  });
+  if (!cat) return [];
+  const children = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(eq(categories.parentId, cat.id));
+  return [cat.id, ...children.map((c) => c.id)];
+}
+
 export async function listProducts(filters: ProductFilters = {}): Promise<ProductListItem[]> {
   const conditions = [eq(products.isVisible, true), isNull(products.deletedAt)];
 
   if (filters.categorySlug) {
-    const cat = await db.query.categories.findFirst({
-      where: eq(categories.slug, filters.categorySlug),
-      columns: { id: true },
-    });
-    if (!cat) return [];
-    conditions.push(eq(products.categoryId, cat.id));
+    const ids = await resolveCategoryIds(filters.categorySlug);
+    if (ids.length === 0) return [];
+    conditions.push(inArray(products.categoryId, ids));
   }
 
   if (filters.brandLineSlug) {
@@ -50,11 +61,20 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       case "popular":
       default:
         return groupByCategory
-          ? [asc(categories.sortOrder), asc(categories.name), desc(products.isFeatured), asc(products.name)]
-          : [desc(products.isFeatured)];
+          ? [
+              sql`COALESCE(parent_categories.sort_order, categories.sort_order) ASC`,
+              sql`COALESCE(parent_categories.name, categories.name) ASC`,
+              asc(categories.sortOrder),
+              asc(categories.name),
+              asc(products.name),
+            ]
+          : [asc(categories.sortOrder), asc(categories.name), asc(products.name)];
     }
   })();
 
+  // rootCategoryName/Slug — используем для группировки в каталоге, чтобы
+  // подкатегории (Кисти/Спонжи/…) сворачивались под корень (Аксессуары).
+  const parentCategories = alias(categories, "parent_categories");
   const rows = await db
     .select({
       id: products.id,
@@ -73,10 +93,13 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       brandLine: brandLines.name,
       categoryName: categories.name,
       categorySlug: categories.slug,
+      rootCategoryName: parentCategories.name,
+      rootCategorySlug: parentCategories.slug,
     })
     .from(products)
     .leftJoin(brandLines, eq(products.brandLineId, brandLines.id))
     .leftJoin(categories, eq(products.categoryId, categories.id))
+    .leftJoin(parentCategories, eq(categories.parentId, parentCategories.id))
     .where(and(...conditions))
     .orderBy(...orderBy)
     .limit(filters.limit ?? 48)
@@ -97,8 +120,10 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     imageFit: (r.imageFit === "cover" ? "cover" : "contain"),
     brandLine: r.brandLine,
     shortDescription: shortenDescription(r.description),
-    categoryName: r.categoryName,
-    categorySlug: r.categorySlug,
+    categoryName: r.rootCategoryName ?? r.categoryName,
+    categorySlug: r.rootCategorySlug ?? r.categorySlug,
+    leafCategoryName: r.categoryName,
+    leafCategorySlug: r.categorySlug,
   }));
 }
 
@@ -171,12 +196,9 @@ export async function countProducts(filters: ProductFilters = {}): Promise<numbe
   const conditions = [eq(products.isVisible, true), isNull(products.deletedAt)];
 
   if (filters.categorySlug) {
-    const cat = await db.query.categories.findFirst({
-      where: eq(categories.slug, filters.categorySlug),
-      columns: { id: true },
-    });
-    if (!cat) return 0;
-    conditions.push(eq(products.categoryId, cat.id));
+    const ids = await resolveCategoryIds(filters.categorySlug);
+    if (ids.length === 0) return 0;
+    conditions.push(inArray(products.categoryId, ids));
   }
 
   if (filters.brandLineSlug) {
@@ -205,7 +227,7 @@ export async function countProducts(filters: ProductFilters = {}): Promise<numbe
   return row?.n ?? 0;
 }
 
-export async function listCategories(): Promise<CategoryNode[]> {
+export async function listCategories(options: { includeSubcategories?: boolean } = {}): Promise<CategoryNode[]> {
   const rows = await db
     .select({
       id: categories.id,
@@ -214,29 +236,33 @@ export async function listCategories(): Promise<CategoryNode[]> {
       parentId: categories.parentId,
     })
     .from(categories)
-    .where(eq(categories.isVisible, true))
+    .where(
+      options.includeSubcategories
+        ? eq(categories.isVisible, true)
+        : and(eq(categories.isVisible, true), isNull(categories.parentId))!,
+    )
     .orderBy(asc(categories.sortOrder), asc(categories.name));
   return rows;
 }
 
 export async function listCategoriesWithProducts(): Promise<CategoryNode[]> {
-  const rows = await db
-    .selectDistinct({
-      id: categories.id,
-      slug: categories.slug,
-      name: categories.name,
-      parentId: categories.parentId,
-      sortOrder: categories.sortOrder,
-    })
-    .from(categories)
-    .innerJoin(products, eq(products.categoryId, categories.id))
-    .where(
-      and(
-        eq(categories.isVisible, true),
-        eq(products.isVisible, true),
-        isNull(products.deletedAt),
-      ),
-    )
-    .orderBy(asc(categories.sortOrder), asc(categories.name));
-  return rows.map(({ id, slug, name, parentId }) => ({ id, slug, name, parentId }));
+  // Возвращает только корневые категории, у которых есть видимые товары
+  // напрямую или через подкатегории.
+  const rows = await db.execute(sql`
+    SELECT DISTINCT c.id, c.slug, c.name, c.parent_id AS "parentId", c.sort_order
+    FROM categories c
+    WHERE c.is_visible = true
+      AND c.parent_id IS NULL
+      AND EXISTS (
+        SELECT 1 FROM products p
+        LEFT JOIN categories sub ON sub.id = p.category_id
+        WHERE p.is_visible = true
+          AND p.deleted_at IS NULL
+          AND (p.category_id = c.id OR sub.parent_id = c.id)
+      )
+    ORDER BY c.sort_order ASC, c.name ASC
+  `);
+  return (rows as unknown as Array<{ id: number; slug: string; name: string; parentId: number | null }>).map(
+    ({ id, slug, name, parentId }) => ({ id, slug, name, parentId }),
+  );
 }
