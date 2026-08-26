@@ -73,6 +73,11 @@ export type SyncResult = {
   imagesDownloaded: number;
   softDeleted: number;
   restored: number;
+  // Категории:
+  //  - categoryAssigned: сколько раз мы подставили категорию (INSERT или UPDATE ранее пустой привязки)
+  //  - categoryKept:     сколько раз сохранили существующую привязку, потому что Billz не отдал категорию
+  categoryAssigned: number;
+  categoryKept: number;
   errors: string[];
 };
 
@@ -88,6 +93,8 @@ export async function syncBillzCatalog(): Promise<SyncResult> {
     imagesDownloaded: 0,
     softDeleted: 0,
     restored: 0,
+    categoryAssigned: 0,
+    categoryKept: 0,
     errors: [],
   };
 
@@ -170,17 +177,17 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   const sku = (rawSku ? `${rawSku}-${billzShort}` : billzShort).slice(0, 64);
 
   const existing = await db
-    .select({ id: products.id })
+    .select({ id: products.id, categoryId: products.categoryId, brandLineId: products.brandLineId })
     .from(products)
     .where(eq(products.billzId, p.id))
     .limit(1);
 
-  const values = {
+  // Общие поля — без categoryId/brandLineId, чтобы не затирать ручную привязку,
+  // когда Billz не вернул категорию/бренд.
+  const baseValues = {
     slug,
     sku,
     name: p.name.slice(0, 300),
-    categoryId,
-    brandLineId,
     description: p.description || null,
     priceTiyin: finalPriceTiyin,
     oldPriceTiyin,
@@ -194,9 +201,25 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   };
 
   if (existing[0]) {
-    await db.update(products).set(values).where(eq(products.id, existing[0].id));
+    // UPDATE: категория/бренд обновляются ТОЛЬКО если Billz прислал непустое значение.
+    // Иначе — оставляем то, что стоит в БД (это может быть ручная привязка админа).
+    const patch: Record<string, unknown> = { ...baseValues };
+    if (categoryId != null) {
+      patch.categoryId = categoryId;
+      if (existing[0].categoryId == null) result.categoryAssigned += 1;
+    } else if (existing[0].categoryId != null) {
+      result.categoryKept += 1;
+    }
+    if (brandLineId != null) {
+      patch.brandLineId = brandLineId;
+    }
+    await db.update(products).set(patch).where(eq(products.id, existing[0].id));
   } else {
-    await db.insert(products).values(values);
+    // INSERT: как раньше — кладём то, что дал Billz (может быть null).
+    if (categoryId != null) result.categoryAssigned += 1;
+    await db
+      .insert(products)
+      .values({ ...baseValues, categoryId, brandLineId });
   }
   return true;
 }
