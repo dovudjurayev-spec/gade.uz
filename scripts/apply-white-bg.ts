@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { readdir, copyFile, mkdir } from "node:fs/promises";
 import { join, basename, extname } from "node:path";
 import { eq } from "drizzle-orm";
