@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Truck, ShieldCheck, Gift } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { listCategories, getFeaturedProducts, listProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
 
@@ -55,26 +55,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Trust bar */}
-      <section className="border-b border-neutral-100 bg-neutral-50/50">
-        <div className="mx-auto max-w-7xl px-4 md:px-8 py-6 grid grid-cols-3 md:grid-cols-3 gap-3 md:gap-6">
-          {[
-            { icon: ShieldCheck, title: "Только оригинал", text: "Официальный дистрибьютор" },
-            { icon: Truck, title: "Быстрая доставка", text: "По Ташкенту за 1 день" },
-            { icon: Gift, title: "Подарок к заказу", text: "От 500 000 сум" },
-          ].map(({ icon: Icon, title, text }) => (
-            <div key={title} className="flex flex-col md:flex-row items-center gap-2 md:gap-3 text-center md:text-left md:justify-center">
-              <div className="grid place-items-center h-10 w-10 rounded-full bg-neutral-100 text-neutral-700 shrink-0">
-                <Icon className="h-4 w-4" strokeWidth={1.75} />
-              </div>
-              <div className="text-[11px] md:text-sm leading-tight">
-                <div className="font-medium text-neutral-900">{title}</div>
-                <div className="text-neutral-500 mt-0.5 hidden md:block">{text}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* Vanilla line */}
       {vanilla.length > 0 && (

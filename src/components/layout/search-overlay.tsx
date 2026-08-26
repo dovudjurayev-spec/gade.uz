@@ -110,7 +110,7 @@ export function SearchOverlay() {
         type="button"
         aria-label="Поиск"
         onClick={() => setOpen(true)}
-        className="p-2 -ml-2 text-neutral-700 hover:text-brand-accent transition-colors cursor-pointer"
+        className="p-2 text-neutral-700 hover:text-brand-accent transition-colors cursor-pointer"
       >
         <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
       </button>

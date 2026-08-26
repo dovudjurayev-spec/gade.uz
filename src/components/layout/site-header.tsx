@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ShoppingBag, User, Heart, ArrowUpRight } from "lucide-react";
 import { CartBadge } from "./cart-badge";
 import { SearchOverlay } from "./search-overlay";
+import { MobileMenu, type MobileSection } from "./mobile-menu";
 import { listCategories, listCategoriesWithProducts } from "@/repositories/products";
 
 type SubItem = { href: string; label: string };
@@ -13,6 +14,16 @@ export async function SiteHeader() {
     listCategoriesWithProducts().catch(() => []),
     listCategories({ includeSubcategories: true }).catch(() => []),
   ]);
+  const VIEW_ALL_BY_SLUG: Record<string, string> = {
+    makiyazh: "Весь макияж",
+    "uhod-za-litsom": "Весь уход за лицом",
+    "uhod-za-telom": "Весь уход за телом",
+    nogti: "Всё для ногтей",
+    parfyumeriya: "Вся парфюмерия",
+    aksessuary: "Все аксессуары",
+  };
+  const viewAllLabel = (slug: string, name: string) =>
+    VIEW_ALL_BY_SLUG[slug] ?? `Все — ${name}`;
   const subsByParent = new Map<number, SubItem[]>();
   for (const c of allCats) {
     if (c.parentId != null) {
@@ -27,11 +38,10 @@ export async function SiteHeader() {
     ...rootCats.map((c) => {
       const subs = subsByParent.get(c.id) ?? [];
       const children: SubItem[] | undefined = subs.length
-        ? [{ href: `/catalog?category=${c.slug}`, label: `Все ${c.name.toLowerCase()}` }, ...subs]
+        ? [{ href: `/catalog?category=${c.slug}`, label: viewAllLabel(c.slug, c.name) }, ...subs]
         : undefined;
       return { href: `/catalog?category=${c.slug}`, label: c.name, children };
     }),
-    { href: "/catalog?sale=1", label: "Аутлет" },
   ];
   return (
     <header className="sticky top-0 z-40 w-full bg-white">
@@ -45,7 +55,8 @@ export async function SiteHeader() {
       {/* Main row */}
       <div className="border-b border-neutral-100">
         <div className="mx-auto grid h-12 max-w-7xl grid-cols-3 items-center px-4 md:px-8">
-          <div className="flex items-center">
+          <div className="flex items-center gap-1 -ml-2">
+            <MobileMenu sections={sections as MobileSection[]} />
             <SearchOverlay />
           </div>
 
