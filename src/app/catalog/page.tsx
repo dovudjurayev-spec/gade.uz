@@ -1,7 +1,7 @@
 import { listProducts, listCategories, countProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
 import Link from "next/link";
-import { Check, TrendingUp, ArrowDownUp, X, Package, Percent, Zap } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -78,13 +78,6 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
   const saleOn = sp.sale === "1";
   const hasActiveFilters = activeCategory || stockOn || saleOn || sp.sort;
 
-  const sortLabels: Record<Sort, { label: string; icon: typeof Zap }> = {
-    popular: { label: "Популярные", icon: TrendingUp },
-    new: { label: "Новинки", icon: Zap },
-    price_asc: { label: "Цена ↑", icon: ArrowDownUp },
-    price_desc: { label: "Цена ↓", icon: ArrowDownUp },
-  };
-
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-8 py-8 md:py-12">
       {/* Header */}
@@ -127,57 +120,6 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
       </div>
 
 
-      {/* Toolbar: filter toggles + sort */}
-      <div className="mb-8 pb-6 border-b border-neutral-200 space-y-3 md:space-y-0 md:flex md:items-center md:justify-between md:gap-3">
-        <div className="-mx-4 md:mx-0">
-          <div className="flex items-center gap-2 overflow-x-auto px-4 md:px-0 no-scrollbar">
-            <ToggleChip
-              href={buildHref(sp, { stock: !stockOn })}
-              active={stockOn}
-              icon={Package}
-              label="В наличии"
-            />
-            <ToggleChip
-              href={buildHref(sp, { sale: !saleOn })}
-              active={saleOn}
-              icon={Percent}
-              label="Со скидкой"
-            />
-            {hasActiveFilters && (
-              <Link
-                href="/catalog"
-                className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
-              >
-                <X className="h-3.5 w-3.5" strokeWidth={1.5} />
-                Сбросить
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="-mx-4 md:mx-0">
-          <div className="flex items-center gap-1 overflow-x-auto px-4 md:px-0 no-scrollbar">
-            {(Object.keys(sortLabels) as Sort[]).map((key) => {
-              const { label, icon: Icon } = sortLabels[key];
-              const active = activeSort === key;
-              return (
-                <Link
-                  key={key}
-                  href={buildHref(sp, { sort: key })}
-                  className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-3 text-xs whitespace-nowrap transition-colors ${
-                    active
-                      ? "text-neutral-900 font-medium"
-                      : "text-neutral-500 hover:text-neutral-900"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  {label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* Grid */}
       {products.length === 0 ? (
@@ -336,29 +278,3 @@ function CategoryChip({ href, active, label }: { href: string; active: boolean; 
   );
 }
 
-function ToggleChip({
-  href,
-  active,
-  icon: Icon,
-  label,
-}: {
-  href: string;
-  active: boolean;
-  icon: typeof Zap;
-  label: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`inline-flex items-center gap-1.5 h-9 px-3 text-xs uppercase tracking-widest border transition-colors ${
-        active
-          ? "border-neutral-900 bg-neutral-900 text-white"
-          : "border-neutral-200 text-neutral-700 hover:border-neutral-900"
-      }`}
-    >
-      <Icon className="h-3.5 w-3.5" strokeWidth={1.5} />
-      {label}
-      {active && <X className="h-3 w-3 ml-0.5" strokeWidth={2} />}
-    </Link>
-  );
-}

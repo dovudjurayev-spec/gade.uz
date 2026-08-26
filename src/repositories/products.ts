@@ -58,6 +58,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       case "price_asc": return [asc(products.priceTiyin)];
       case "price_desc": return [desc(products.priceTiyin)];
       case "new": return [desc(products.createdAt)];
+      case "random": return [sql`RANDOM()`];
       case "popular":
       default:
         return groupByCategory
@@ -181,7 +182,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<ProductListItem[]> {
-  return listProducts({ sort: "popular", limit });
+  return listProducts({ sort: "random", limit });
 }
 
 export async function getAllProductSlugs(): Promise<string[]> {

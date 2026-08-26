@@ -45,7 +45,7 @@ export type ProductFilters = {
   onSale?: boolean;
   minTiyin?: number;
   maxTiyin?: number;
-  sort?: "popular" | "new" | "price_asc" | "price_desc";
+  sort?: "popular" | "new" | "price_asc" | "price_desc" | "random";
   q?: string;
   limit?: number;
   offset?: number;
