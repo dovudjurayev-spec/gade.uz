@@ -17,6 +17,7 @@ export type ProductListItem = {
   categorySlug?: string | null;
   leafCategoryName?: string | null;
   leafCategorySlug?: string | null;
+  categoryId?: number | null;
 };
 
 export type ProductDetail = ProductListItem & {

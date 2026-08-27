@@ -126,6 +126,14 @@ export type BillzShopPrice = {
   promos: unknown;
 };
 
+export type BillzCustomField = {
+  custom_field_name: string;
+  custom_field_system_name: string;
+  custom_field_id: string;
+  custom_field_value: string;
+  from_parent?: boolean;
+};
+
 export type BillzProduct = {
   id: string;
   parent_id: string;
@@ -142,7 +150,16 @@ export type BillzProduct = {
   is_variative: boolean;
   shop_measurement_values: BillzShopMeasurement[] | null;
   shop_prices: BillzShopPrice[] | null;
+  custom_fields?: BillzCustomField[] | null;
 };
+
+export function getCustomField(p: BillzProduct, systemName: string): string | null {
+  const raw = p.custom_fields?.find(
+    (f) => f.custom_field_system_name?.toUpperCase() === systemName.toUpperCase(),
+  )?.custom_field_value;
+  const v = typeof raw === "string" ? raw.trim() : "";
+  return v.length > 0 ? v : null;
+}
 
 export type BillzProductsResponse = {
   count: number;

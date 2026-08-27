@@ -2,6 +2,7 @@ import { listProducts, listCategories, countProducts } from "@/repositories/prod
 import { ProductCard } from "@/components/catalog/product-card";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
+import type { ReactNode } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -65,9 +66,31 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
     countProducts(filters),
   ]);
   const rootCats = allCats.filter((c) => c.parentId == null);
+  const catById = new Map(allCats.map((c) => [c.id, c] as const));
   const activeCat = sp.category ? allCats.find((c) => c.slug === sp.category) ?? null : null;
-  const activeRootId = activeCat?.parentId ?? activeCat?.id ?? null;
-  const subCats = activeRootId ? allCats.filter((c) => c.parentId === activeRootId) : [];
+  // Определяем уровень активной категории и её предков.
+  let activeRootId: number | null = null;
+  let activeL2Id: number | null = null;
+  let activeL3Id: number | null = null;
+  if (activeCat) {
+    if (activeCat.parentId == null) {
+      activeRootId = activeCat.id;
+    } else {
+      const parent = catById.get(activeCat.parentId) ?? null;
+      if (parent?.parentId == null) {
+        activeRootId = parent?.id ?? null;
+        activeL2Id = activeCat.id;
+      } else {
+        const grand = catById.get(parent.parentId) ?? null;
+        activeRootId = grand?.id ?? null;
+        activeL2Id = parent.id;
+        activeL3Id = activeCat.id;
+      }
+    }
+  }
+  const l2Cats = activeRootId ? allCats.filter((c) => c.parentId === activeRootId) : [];
+  const l3Cats = activeL2Id ? allCats.filter((c) => c.parentId === activeL2Id) : [];
+  const subCats = l2Cats;
   const cats = rootCats;
   const hasMore = products.length < total;
   const remaining = Math.max(0, total - products.length);
@@ -100,9 +123,9 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
         </div>
       </div>
 
-      {/* Categories — horizontal pill scroller */}
-      <div className="-mx-4 md:mx-0 mb-6">
-        <div className="flex gap-2 overflow-x-auto px-4 md:px-0 pb-2 no-scrollbar">
+      {/* Categories — horizontal pill scroller (L1 → L2 → L3) */}
+      <div className="-mx-4 md:mx-0 mb-6 space-y-2">
+        <ChipScroller>
           <CategoryChip
             href={buildHref(sp, { category: null })}
             active={!activeCategory}
@@ -112,11 +135,49 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             <CategoryChip
               key={c.id}
               href={buildHref(sp, { category: c.slug })}
-              active={activeCategory === c.slug || activeCat?.parentId === c.id}
+              active={activeRootId === c.id}
               label={c.name}
             />
           ))}
-        </div>
+        </ChipScroller>
+        {l2Cats.length > 0 && (
+          <ChipScroller>
+            {(() => {
+              const rootCat = activeRootId ? catById.get(activeRootId) : null;
+              return rootCat ? (
+                <CategoryChip
+                  href={buildHref(sp, { category: rootCat.slug })}
+                  active={activeCategory === rootCat.slug}
+                  label={`Весь ${rootCat.name.toLowerCase()}`}
+                  size="sm"
+                />
+              ) : null;
+            })()}
+            {l2Cats.map((c) => (
+              <CategoryChip
+                key={c.id}
+                href={buildHref(sp, { category: c.slug })}
+                active={activeL2Id === c.id}
+                label={c.name}
+                size="sm"
+              />
+            ))}
+          </ChipScroller>
+        )}
+        {l3Cats.length > 0 && (
+          <ChipScroller>
+            {l3Cats.map((c) => (
+              <CategoryChip
+                key={c.id}
+                href={buildHref(sp, { category: c.slug })}
+                active={activeL3Id === c.id}
+                label={c.name}
+                size="sm"
+                muted
+              />
+            ))}
+          </ChipScroller>
+        )}
       </div>
 
 
@@ -139,42 +200,113 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             const groupByCategory =
               (activeSort === "popular") && !activeCategory && !sp.q;
             if (!groupByCategory) {
-              // Внутри выбранной корневой категории показываем подзаголовки подкатегорий,
-              // но встраиваем их в ту же сетку через col-span-full — ряды карточек текут
-              // непрерывно, последний ряд заполняется до конца.
-              const isRootWithSubs =
-                activeCat && activeCat.parentId == null && subCats.length > 0;
-              if (isRootWithSubs && activeSort === "popular") {
-                type Cell = { kind: "header"; key: string; label: string } | { kind: "card"; key: string; product: (typeof products)[number] };
-                const cells: Cell[] = [];
-                let currentSlug: string | null | undefined = undefined;
+              // Внутри выбранной ветки строим иерархическое представление:
+              // L1 → L2 → L3. Заголовки уровней вставляем в общую сетку через col-span-full,
+              // чтобы карточки текли непрерывно.
+              const hasHierarchy =
+                activeCat &&
+                activeSort === "popular" &&
+                (l2Cats.length > 0 || l3Cats.length > 0);
+              if (hasHierarchy) {
+                // Для каждого товара определяем его L2 и L3 в рамках активного корня.
+                type L3Bucket = {
+                  id: number | null;
+                  name: string;
+                  products: (typeof products)[number][];
+                };
+                type L2Bucket = {
+                  id: number | null;
+                  sortOrder: number;
+                  name: string;
+                  l3s: L3Bucket[];
+                };
+                const l2Map = new Map<number | null, L2Bucket>();
+                const l2SortOrder = (id: number | null) =>
+                  id == null ? 9999 : allCats.findIndex((c) => c.id === id);
+
                 for (const p of products) {
-                  const leafName = p.leafCategoryName ?? activeCat!.name;
-                  const leafSlug = p.leafCategorySlug ?? activeCat!.slug;
-                  if (leafSlug !== currentSlug) {
-                    currentSlug = leafSlug;
-                    cells.push({ kind: "header", key: `h-${leafSlug ?? "misc"}-${cells.length}`, label: leafName });
+                  const leaf = p.categoryId ? catById.get(p.categoryId) ?? null : null;
+                  let l2: typeof leaf = null;
+                  let l3: typeof leaf = null;
+                  if (leaf) {
+                    if (leaf.parentId === activeRootId) {
+                      l2 = leaf;
+                    } else if (leaf.parentId != null) {
+                      const parent = catById.get(leaf.parentId) ?? null;
+                      if (parent && parent.parentId === activeRootId) {
+                        l2 = parent;
+                        l3 = leaf;
+                      } else if (leaf.id === activeRootId) {
+                        // Товар прямо на корне — оставляем в "misc".
+                      }
+                    }
                   }
-                  cells.push({ kind: "card", key: `p-${p.id}`, product: p });
+                  const l2Key = l2?.id ?? null;
+                  let l2Bucket = l2Map.get(l2Key);
+                  if (!l2Bucket) {
+                    l2Bucket = {
+                      id: l2Key,
+                      sortOrder: l2SortOrder(l2Key),
+                      name: l2?.name ?? "Прочее",
+                      l3s: [],
+                    };
+                    l2Map.set(l2Key, l2Bucket);
+                  }
+                  const l3Key = l3?.id ?? null;
+                  let l3Bucket = l2Bucket.l3s.find((b) => b.id === l3Key);
+                  if (!l3Bucket) {
+                    l3Bucket = { id: l3Key, name: l3?.name ?? l2Bucket.name, products: [] };
+                    l2Bucket.l3s.push(l3Bucket);
+                  }
+                  l3Bucket.products.push(p);
                 }
-                if (cells.some((c) => c.kind === "header")) {
-                  return (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {cells.map((c) =>
-                        c.kind === "header" ? (
-                          <h3
-                            key={c.key}
-                            className="col-span-full text-sm uppercase tracking-widest text-neutral-600 mt-6 first:mt-0"
-                          >
-                            {c.label}
-                          </h3>
-                        ) : (
-                          <ProductCard key={c.key} product={c.product} />
-                        ),
-                      )}
-                    </div>
-                  );
+
+                const orderedL2 = [...l2Map.values()].sort((a, b) => a.sortOrder - b.sortOrder);
+                const isL2Selected = activeCat!.parentId != null;
+
+                type Cell =
+                  | { kind: "l2"; key: string; label: string }
+                  | { kind: "l3"; key: string; label: string }
+                  | { kind: "card"; key: string; product: (typeof products)[number] };
+                const cells: Cell[] = [];
+                for (const l2 of orderedL2) {
+                  // Заголовок L2 показываем только если выбран корень (иначе — избыточно).
+                  if (!isL2Selected && orderedL2.length > 1) {
+                    cells.push({ kind: "l2", key: `l2-${l2.id ?? "misc"}`, label: l2.name });
+                  }
+                  const hasL3Headers = l2.l3s.some((b) => b.id != null);
+                  for (const l3 of l2.l3s) {
+                    if (hasL3Headers && l3.id != null) {
+                      cells.push({ kind: "l3", key: `l3-${l3.id}`, label: l3.name });
+                    }
+                    for (const p of l3.products) {
+                      cells.push({ kind: "card", key: `p-${p.id}`, product: p });
+                    }
+                  }
                 }
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {cells.map((c) =>
+                      c.kind === "l2" ? (
+                        <h2
+                          key={c.key}
+                          className="col-span-full text-lg md:text-xl font-light tracking-tight text-neutral-900 mt-8 first:mt-0"
+                        >
+                          {c.label}
+                        </h2>
+                      ) : c.kind === "l3" ? (
+                        <h3
+                          key={c.key}
+                          className="col-span-full text-[11px] uppercase tracking-[0.25em] text-neutral-500 mt-4 first:mt-0"
+                        >
+                          {c.label}
+                        </h3>
+                      ) : (
+                        <ProductCard key={c.key} product={c.product} />
+                      ),
+                    )}
+                  </div>
+                );
               }
               return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -262,14 +394,47 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
   );
 }
 
-function CategoryChip({ href, active, label }: { href: string; active: boolean; label: string }) {
+function ChipScroller({ children }: { children: ReactNode }) {
+  return (
+    <div className="relative">
+      <div className="flex gap-2 overflow-x-auto px-4 md:px-0 pb-2 no-scrollbar snap-x snap-mandatory md:snap-none [&>*]:snap-start">
+        {children}
+      </div>
+      {/* Fade-подсказки о скролле — только на мобильных */}
+      <div
+        aria-hidden
+        className="md:hidden pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent"
+      />
+      <div
+        aria-hidden
+        className="md:hidden pointer-events-none absolute inset-y-0 left-0 w-4 bg-gradient-to-r from-white to-transparent"
+      />
+    </div>
+  );
+}
+
+function CategoryChip({
+  href,
+  active,
+  label,
+  size = "md",
+  muted = false,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+  size?: "md" | "sm";
+  muted?: boolean;
+}) {
+  const sizing = size === "sm" ? "h-7 px-3 text-[12px]" : "h-9 px-4 text-sm";
+  const inactive = muted
+    ? "bg-transparent text-neutral-500 border-neutral-200 hover:text-neutral-900 hover:border-neutral-400"
+    : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900";
   return (
     <Link
       href={href}
-      className={`shrink-0 inline-flex items-center gap-1.5 h-9 px-4 text-sm rounded-full border transition-colors whitespace-nowrap ${
-        active
-          ? "bg-neutral-900 text-white border-neutral-900"
-          : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border transition-colors whitespace-nowrap ${sizing} ${
+        active ? "bg-neutral-900 text-white border-neutral-900" : inactive
       }`}
     >
       {active && <Check className="h-3.5 w-3.5" strokeWidth={2} />}

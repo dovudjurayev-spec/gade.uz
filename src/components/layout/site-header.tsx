@@ -6,7 +6,8 @@ import { SearchOverlay } from "./search-overlay";
 import { MobileMenu, type MobileSection } from "./mobile-menu";
 import { listCategories, listCategoriesWithProducts } from "@/repositories/products";
 
-type SubItem = { href: string; label: string };
+type LeafItem = { href: string; label: string };
+type SubItem = { href: string; label: string; children?: LeafItem[] };
 type Section = { href: string; label: string; children?: SubItem[] };
 
 export async function SiteHeader() {
@@ -24,21 +25,30 @@ export async function SiteHeader() {
   };
   const viewAllLabel = (slug: string, name: string) =>
     VIEW_ALL_BY_SLUG[slug] ?? `Все — ${name}`;
-  const subsByParent = new Map<number, SubItem[]>();
+  const childrenByParent = new Map<number, { id: number; slug: string; name: string }[]>();
   for (const c of allCats) {
     if (c.parentId != null) {
-      const arr = subsByParent.get(c.parentId) ?? [];
-      arr.push({ href: `/catalog?category=${c.slug}`, label: c.name });
-      subsByParent.set(c.parentId, arr);
+      const arr = childrenByParent.get(c.parentId) ?? [];
+      arr.push({ id: c.id, slug: c.slug, name: c.name });
+      childrenByParent.set(c.parentId, arr);
     }
   }
   const sections: Section[] = [
-    { href: "/catalog?sort=new", label: "Новинки" },
     { href: "/catalog?sort=popular", label: "Хиты продаж" },
     ...rootCats.map((c) => {
-      const subs = subsByParent.get(c.id) ?? [];
-      const children: SubItem[] | undefined = subs.length
-        ? [{ href: `/catalog?category=${c.slug}`, label: viewAllLabel(c.slug, c.name) }, ...subs]
+      const l2 = childrenByParent.get(c.id) ?? [];
+      const l2Items: SubItem[] = l2.map((sub) => {
+        const l3 = childrenByParent.get(sub.id) ?? [];
+        return {
+          href: `/catalog?category=${sub.slug}`,
+          label: sub.name,
+          children: l3.length
+            ? l3.map((leaf) => ({ href: `/catalog?category=${leaf.slug}`, label: leaf.name }))
+            : undefined,
+        };
+      });
+      const children: SubItem[] | undefined = l2Items.length
+        ? [{ href: `/catalog?category=${c.slug}`, label: viewAllLabel(c.slug, c.name) }, ...l2Items]
         : undefined;
       return { href: `/catalog?category=${c.slug}`, label: c.name, children };
     }),
@@ -136,23 +146,57 @@ export async function SiteHeader() {
                         </div>
                         <div className="mx-5 h-px bg-neutral-100" />
                         <ul className="py-2">
-                          {subs.map((c) => (
-                            <li key={c.href}>
-                              <Link
-                                href={c.href}
-                                className="group/item flex items-center justify-between gap-6 px-5 py-2.5 text-[13px] text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
-                              >
-                                <span className="inline-flex items-center gap-2.5">
-                                  <span className="h-px w-3 bg-neutral-300 transition-all duration-200 group-hover/item:w-6 group-hover/item:bg-neutral-900" />
-                                  {c.label}
-                                </span>
-                                <ArrowUpRight
-                                  className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover/item:opacity-100 group-hover/item:translate-x-0"
-                                  strokeWidth={1.5}
-                                />
-                              </Link>
-                            </li>
-                          ))}
+                          {subs.map((c) => {
+                            const hasLeaves = !!c.children && c.children.length > 0;
+                            return (
+                              <li key={c.href} className="group/sub relative">
+                                <Link
+                                  href={c.href}
+                                  className="group/item flex items-center justify-between gap-6 px-5 py-2.5 text-[13px] text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                                >
+                                  <span className="inline-flex items-center gap-2.5">
+                                    <span className="h-px w-3 bg-neutral-300 transition-all duration-200 group-hover/item:w-6 group-hover/item:bg-neutral-900" />
+                                    {c.label}
+                                  </span>
+                                  <ArrowUpRight
+                                    className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover/item:opacity-100 group-hover/item:translate-x-0"
+                                    strokeWidth={1.5}
+                                  />
+                                </Link>
+                                {hasLeaves && (
+                                  <div className="invisible opacity-0 translate-x-1 group-hover/sub:visible group-hover/sub:opacity-100 group-hover/sub:translate-x-0 transition-all duration-200 absolute left-full top-0 pl-2 z-50">
+                                    <div className="min-w-[240px] bg-white shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)] ring-1 ring-neutral-100">
+                                      <div className="px-5 pt-4 pb-2">
+                                        <div className="text-[10px] uppercase tracking-[0.25em] text-neutral-400">
+                                          {c.label}
+                                        </div>
+                                      </div>
+                                      <div className="mx-5 h-px bg-neutral-100" />
+                                      <ul className="py-2">
+                                        {c.children!.map((leaf) => (
+                                          <li key={leaf.href}>
+                                            <Link
+                                              href={leaf.href}
+                                              className="group/leaf flex items-center justify-between gap-6 px-5 py-2 text-[13px] text-neutral-700 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                                            >
+                                              <span className="inline-flex items-center gap-2.5">
+                                                <span className="h-px w-2 bg-neutral-300 transition-all duration-200 group-hover/leaf:w-5 group-hover/leaf:bg-neutral-900" />
+                                                {leaf.label}
+                                              </span>
+                                              <ArrowUpRight
+                                                className="h-3.5 w-3.5 opacity-0 -translate-x-1 transition-all duration-200 group-hover/leaf:opacity-100 group-hover/leaf:translate-x-0"
+                                                strokeWidth={1.5}
+                                              />
+                                            </Link>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
                         </ul>
                         {viewAll && (
                           <>

@@ -15,11 +15,26 @@ async function resolveCategoryIds(slug: string): Promise<number[]> {
     columns: { id: true },
   });
   if (!cat) return [];
-  const children = await db
-    .select({ id: categories.id })
-    .from(categories)
-    .where(eq(categories.parentId, cat.id));
-  return [cat.id, ...children.map((c) => c.id)];
+  // Рекурсивно собираем всё поддерево категории (L2 и L3).
+  const all = await db
+    .select({ id: categories.id, parentId: categories.parentId })
+    .from(categories);
+  const childrenOf = new Map<number, number[]>();
+  for (const c of all) {
+    if (c.parentId != null) {
+      const arr = childrenOf.get(c.parentId) ?? [];
+      arr.push(c.id);
+      childrenOf.set(c.parentId, arr);
+    }
+  }
+  const result: number[] = [];
+  const stack = [cat.id];
+  while (stack.length) {
+    const id = stack.pop()!;
+    result.push(id);
+    for (const child of childrenOf.get(id) ?? []) stack.push(child);
+  }
+  return result;
 }
 
 export async function listProducts(filters: ProductFilters = {}): Promise<ProductListItem[]> {
@@ -92,6 +107,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
       imageFit: products.imageFit,
       description: products.description,
       brandLine: brandLines.name,
+      categoryId: products.categoryId,
       categoryName: categories.name,
       categorySlug: categories.slug,
       rootCategoryName: parentCategories.name,
@@ -125,6 +141,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
     categorySlug: r.rootCategorySlug ?? r.categorySlug,
     leafCategoryName: r.categoryName,
     leafCategorySlug: r.categorySlug,
+    categoryId: r.categoryId,
   }));
 }
 

@@ -1,13 +1,23 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { listCategories, getFeaturedProducts, listProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
+
+const CATEGORY_TILE_IMAGES: Record<string, string> = {
+  makiyazh: "/categories/makiyazh.png",
+  "uhod-za-litsom": "/categories/uhod-za-litsom.png",
+  "uhod-za-telom": "/categories/uhod-za-telom.png",
+  nogti: "/categories/nogti.png",
+  parfyumeriya: "/categories/parfyumeriya.png",
+  aksessuary: "/categories/aksessuary.png",
+};
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const [categories, bestSellers, vanilla] = await Promise.all([
-    listCategories().then((c) => c.slice(0, 4)),
+    listCategories(),
     getFeaturedProducts(8),
     listProducts({ brandLineSlug: "vanilla", limit: 4 }),
   ]);
@@ -103,26 +113,37 @@ export default async function HomePage() {
               Все категории <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {categories.map((c) => (
-              <Link
-                key={c.id}
-                href={`/catalog?category=${c.slug}`}
-                className="group relative aspect-square overflow-hidden bg-neutral-100 transition-colors"
-              >
-                <div className="absolute inset-0 bg-neutral-200 opacity-0 group-hover:opacity-60 transition-opacity duration-500" />
-                <div className="absolute inset-0 flex items-end p-4">
-                  <div className="relative">
-                    <div className="text-base md:text-lg font-medium text-neutral-900 transition-colors">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+            {categories.map((c) => {
+              const img = CATEGORY_TILE_IMAGES[c.slug];
+              return (
+                <Link
+                  key={c.id}
+                  href={`/catalog?category=${c.slug}`}
+                  className="group relative aspect-square overflow-hidden bg-neutral-50 transition-colors"
+                >
+                  {img && (
+                    <Image
+                      src={img}
+                      alt=""
+                      fill
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                      className={`object-contain object-bottom md:p-8 md:pt-20 transition-transform duration-500 group-hover:scale-105 ${
+                        c.slug === "makiyazh" ? "p-0 pt-10 scale-110" : "p-1 pt-12"
+                      }`}
+                    />
+                  )}
+                  <div className="absolute inset-x-0 top-0 p-3 md:p-5">
+                    <div className="text-sm md:text-lg font-medium text-neutral-900">
                       {c.name}
                     </div>
-                    <div className="text-xs text-neutral-500 mt-0.5 inline-flex items-center gap-1 group-hover:text-neutral-900 transition-colors">
+                    <div className="text-[11px] md:text-xs text-neutral-500 -mt-2 inline-flex items-center gap-1 group-hover:text-neutral-900 transition-colors">
                       Смотреть <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
                     </div>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
