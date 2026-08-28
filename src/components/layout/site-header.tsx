@@ -58,7 +58,7 @@ export async function SiteHeader() {
       {/* Announcement */}
       <div className="bg-neutral-900 text-[11px] text-white">
         <div className="mx-auto flex h-7 max-w-7xl items-center justify-center px-4 md:px-8 tracking-wide">
-          Бесплатная доставка по Ташкенту от 500 000 сум
+          Доставка от 1 000 000 сум бесплатно
         </div>
       </div>
 

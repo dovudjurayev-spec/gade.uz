@@ -137,11 +137,17 @@ export const customers = pgTable(
     name: varchar("name", { length: 200 }),
     email: varchar("email", { length: 200 }),
     passwordHash: text("password_hash"),
+    telegramId: bigint("telegram_id", { mode: "number" }),
+    telegramUsername: varchar("telegram_username", { length: 64 }),
+    telegramPhotoUrl: text("telegram_photo_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     phoneIdx: uniqueIndex("customers_phone_idx").on(t.phone).where(sql`${t.phone} IS NOT NULL`),
     emailIdx: uniqueIndex("customers_email_idx").on(t.email).where(sql`${t.email} IS NOT NULL`),
+    telegramIdx: uniqueIndex("customers_telegram_id_idx")
+      .on(t.telegramId)
+      .where(sql`${t.telegramId} IS NOT NULL`),
   }),
 );
 
@@ -193,6 +199,7 @@ export const emailVerifications = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    customerId: integer("customer_id").references(() => customers.id, { onDelete: "cascade" }),
   },
   (t) => ({
     emailIdx: index("email_verifications_email_idx").on(t.email),
@@ -220,6 +227,7 @@ export const sessions = pgTable("sessions", {
   customerId: integer("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  crossSite: boolean("cross_site").notNull().default(false),
 });
 
 export const favorites = pgTable(

@@ -15,7 +15,8 @@
     "db:migrate": "tsx src/db/migrate.ts",
     "db:seed": "tsx src/db/seed.ts",
     "admin:hash-password": "tsx src/scripts/hash-password.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test": "node --import tsx --test 'src/**/*.test.ts'"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.7",
