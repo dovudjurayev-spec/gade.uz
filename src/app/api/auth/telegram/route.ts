@@ -13,6 +13,20 @@ export const runtime = "nodejs";
 
 const schema = z.object({ initData: z.string().min(1).max(4096) });
 
+// TEMP debug: GET returns which bot the env token belongs to. Remove after diagnosis.
+export async function GET() {
+  const token = env.TELEGRAM_TMA_BOT_TOKEN;
+  if (!token) return NextResponse.json({ ok: false, error: "no_token" });
+  const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+  const data = (await r.json().catch(() => null)) as { ok?: boolean; result?: { username?: string; id?: number } } | null;
+  return NextResponse.json({
+    ok: data?.ok ?? false,
+    username: data?.result?.username ?? null,
+    id: data?.result?.id ?? null,
+    tokenLen: token.length,
+  });
+}
+
 export async function POST(req: Request) {
   // Origin — свой домен или один из доменов Telegram Web. Заголовок обязателен.
   if (!originAllowed(req, true)) {
