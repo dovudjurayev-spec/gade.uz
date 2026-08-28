@@ -14,6 +14,9 @@ const envSchema = z.object({
   TELEGRAM_ORDERS_CHAT_ID: z.string().optional(),
   TELEGRAM_TECH_CHAT_ID: z.string().optional(),
   TELEGRAM_WEBHOOK_SECRET: z.string().min(16).optional(),
+  // Токен бота, обслуживающего Telegram Mini App (валидация initData).
+  // Отдельно от TELEGRAM_BOT_TOKEN, который используется для админ-уведомлений о заказах.
+  TELEGRAM_TMA_BOT_TOKEN: z.string().optional(),
 
   ORDER_TOKEN_SECRET: z.string().min(32).optional(),
 

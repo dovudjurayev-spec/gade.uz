@@ -1,5 +1,6 @@
 import { listProducts, listCategories, countProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
+import { Reveal } from "@/components/ui/reveal";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
@@ -286,7 +287,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                 }
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {cells.map((c) =>
+                    {cells.map((c, idx) =>
                       c.kind === "l2" ? (
                         <h2
                           key={c.key}
@@ -302,7 +303,9 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                           {c.label}
                         </h3>
                       ) : (
-                        <ProductCard key={c.key} product={c.product} />
+                        <Reveal key={c.key} delay={(idx % 4) * 60}>
+                          <ProductCard product={c.product} />
+                        </Reveal>
                       ),
                     )}
                   </div>
@@ -310,8 +313,10 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
               }
               return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {products.map((p) => (
-                    <ProductCard key={p.id} product={p} />
+                  {products.map((p, i) => (
+                    <Reveal key={p.id} delay={(i % 4) * 60}>
+                      <ProductCard product={p} />
+                    </Reveal>
                   ))}
                 </div>
               );
@@ -354,8 +359,10 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                                 <h3 className="text-sm uppercase tracking-widest text-neutral-600">{s.name}</h3>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {s.items.map((p) => (
-                                  <ProductCard key={p.id} product={p} />
+                                {s.items.map((p, k) => (
+                                  <Reveal key={p.id} delay={(k % 4) * 60}>
+                                    <ProductCard product={p} />
+                                  </Reveal>
                                 ))}
                               </div>
                             </div>
@@ -363,8 +370,10 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {g.items.map((p) => (
-                            <ProductCard key={p.id} product={p} />
+                          {g.items.map((p, k) => (
+                            <Reveal key={p.id} delay={(k % 4) * 60}>
+                              <ProductCard product={p} />
+                            </Reveal>
                           ))}
                         </div>
                       )}

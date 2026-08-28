@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { listCategories, getFeaturedProducts, listProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
+import { Reveal } from "@/components/ui/reveal";
 
 const CATEGORY_TILE_IMAGES: Record<string, string> = {
   makiyazh: "/categories/makiyazh.png",
@@ -12,6 +13,8 @@ const CATEGORY_TILE_IMAGES: Record<string, string> = {
   parfyumeriya: "/categories/parfyumeriya.png",
   aksessuary: "/categories/aksessuary.png",
 };
+
+const CATEGORY_TILE_BG_DEFAULT = "bg-white";
 
 export const dynamic = "force-dynamic";
 
@@ -24,43 +27,26 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Hero — mobile: stacked; desktop: split side-by-side */}
-      <section className="border-b border-neutral-100 bg-white md:grid md:grid-cols-2 md:min-h-[calc(100vh-112px)]">
-        {/* Content */}
-        <div className="flex flex-col justify-center px-4 md:pr-8 lg:pr-12 pt-12 md:py-16 pb-10 md:order-1 md:pl-[max(2rem,calc((100vw-80rem)/2+2rem))]">
-          <span className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-5 block">
-            Новая коллекция · Скидка до 30%
-          </span>
-          <h1 className="text-4xl md:text-6xl font-light leading-[1.05] tracking-tight text-neutral-900 mb-6">
-            Vanilla — тёплая линейка
-          </h1>
-          <p className="text-base md:text-lg text-neutral-600 mb-8 max-w-md leading-relaxed">
-            Мисты, кремы и парфюм — единая линейка с тёплым шлейфом ванили. Ритуал ухода, объединённый одним ароматом. Знакомство со скидкой до 30%.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/catalog"
-              className="group inline-flex items-center gap-2 bg-neutral-900 text-white px-7 py-3.5 text-sm hover:bg-neutral-700 transition-colors"
-            >
-              В каталог
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
-            </Link>
-            <Link
-              href="/catalog?sale=1"
-              className="inline-flex items-center gap-2 border border-neutral-900 text-neutral-900 px-7 py-3.5 text-sm hover:bg-neutral-900 hover:text-white transition-colors"
-            >
-              Товары со скидкой
-            </Link>
-          </div>
-        </div>
-
-        {/* Animation — mobile below text, desktop right */}
-        <div className="relative w-full h-[52vh] md:h-auto md:min-h-0 md:order-2 overflow-hidden bg-white">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/hero-animation.webp"
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-top md:object-right"
+      {/* Hero — banner image with CTA */}
+      <section className="border-b border-neutral-100 bg-white">
+        <div className="relative w-full">
+          <Image
+            src="/hero-banner-mobile.jpg"
+            alt="GA-DE — Feel the Beauty"
+            width={900}
+            height={1200}
+            priority
+            sizes="100vw"
+            className="w-full h-auto object-contain md:hidden"
+          />
+          <Image
+            src="/hero-banner.jpg"
+            alt="GA-DE — Feel the Beauty"
+            width={1920}
+            height={600}
+            priority
+            sizes="100vw"
+            className="hidden md:block w-full h-auto object-contain"
           />
         </div>
       </section>
@@ -88,8 +74,10 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {vanilla.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {vanilla.map((p, i) => (
+              <Reveal key={p.id} delay={i * 80}>
+                <ProductCard product={p} />
+              </Reveal>
             ))}
           </div>
         </section>
@@ -113,33 +101,34 @@ export default async function HomePage() {
               Все категории <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
             </Link>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-5">
             {categories.map((c) => {
               const img = CATEGORY_TILE_IMAGES[c.slug];
               return (
                 <Link
                   key={c.id}
                   href={`/catalog?category=${c.slug}`}
-                  className="group relative aspect-square overflow-hidden bg-neutral-50 transition-colors"
+                  className="group block"
                 >
-                  {img && (
-                    <Image
-                      src={img}
-                      alt=""
-                      fill
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      className={`object-contain object-bottom md:p-8 md:pt-20 transition-transform duration-500 group-hover:scale-105 ${
-                        c.slug === "makiyazh" ? "p-0 pt-10 scale-110" : "p-1 pt-12"
-                      }`}
-                    />
-                  )}
-                  <div className="absolute inset-x-0 top-0 p-3 md:p-5">
-                    <div className="text-sm md:text-lg font-medium text-neutral-900">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-white ring-1 ring-neutral-200/70">
+                    {img && (
+                      <Image
+                        src={img}
+                        alt=""
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-contain object-center p-1 md:p-8 transition-transform duration-500 group-hover:scale-105"
+                      />
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-3">
+                    <div className="text-sm md:text-base font-medium text-neutral-900 group-hover:text-neutral-600 transition-colors">
                       {c.name}
                     </div>
-                    <div className="text-[11px] md:text-xs text-neutral-500 -mt-2 inline-flex items-center gap-1 group-hover:text-neutral-900 transition-colors">
-                      Смотреть <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
-                    </div>
+                    <ArrowRight
+                      className="ml-auto h-4 w-4 text-neutral-400 transition-all group-hover:text-neutral-900 group-hover:translate-x-1"
+                      strokeWidth={1.5}
+                    />
                   </div>
                 </Link>
               );
@@ -167,8 +156,10 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {bestSellers.map((p) => (
-              <ProductCard key={p.id} product={p} />
+            {bestSellers.map((p, i) => (
+              <Reveal key={p.id} delay={(i % 4) * 80}>
+                <ProductCard product={p} />
+              </Reveal>
             ))}
           </div>
         </section>

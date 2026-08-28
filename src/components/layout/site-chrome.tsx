@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { FloatingActions } from "./floating-actions";
 
 export function SiteChrome({
   header,
@@ -12,13 +13,14 @@ export function SiteChrome({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith("/admin");
-  if (isAdmin) return <>{children}</>;
+  const bare = pathname?.startsWith("/admin") || pathname?.startsWith("/tma");
+  if (bare) return <>{children}</>;
   return (
     <>
       {header}
       <main className="flex-1">{children}</main>
       {footer}
+      <FloatingActions />
     </>
   );
 }
