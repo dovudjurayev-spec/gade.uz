@@ -40,9 +40,10 @@ export function validateInitData(
     return { ok: false, reason: "bad_hash" };
   }
 
-  // signature — новое поле, тоже исключаем из data_check_string
+  // По доке Telegram для HMAC-проверки удаляется ТОЛЬКО поле hash.
+  // Поле signature (Ed25519 для third-party) должно оставаться в data_check_string —
+  // иначе computed HMAC не совпадёт с тем, что подписал Telegram.
   params.delete("hash");
-  params.delete("signature");
 
   const pairs: string[] = [];
   for (const [key, value] of params.entries()) {
