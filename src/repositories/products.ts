@@ -57,6 +57,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
 
   if (filters.inStock) conditions.push(gt(products.stock, 0));
   if (filters.onSale) conditions.push(isNotNull(products.oldPriceTiyin));
+  if (filters.featured) conditions.push(eq(products.isFeatured, true));
   if (typeof filters.minTiyin === "number") conditions.push(gte(products.priceTiyin, filters.minTiyin));
   if (typeof filters.maxTiyin === "number") conditions.push(lte(products.priceTiyin, filters.maxTiyin));
   if (filters.q && filters.q.trim()) {
@@ -199,7 +200,16 @@ export async function getProductBySlug(slug: string): Promise<ProductDetail | nu
 }
 
 export async function getFeaturedProducts(limit = 8): Promise<ProductListItem[]> {
-  return listProducts({ sort: "random", limit });
+  const featured = await listProducts({ featured: true, sort: "popular", limit });
+  if (featured.length >= limit) return featured;
+  // Добираем случайными, если помеченных «хит» меньше нужного количества.
+  const filler = await listProducts({ sort: "random", limit: limit - featured.length });
+  const seen = new Set(featured.map((p) => p.id));
+  for (const p of filler) {
+    if (!seen.has(p.id)) featured.push(p);
+    if (featured.length >= limit) break;
+  }
+  return featured;
 }
 
 export async function getAllProductSlugs(): Promise<string[]> {
@@ -230,6 +240,7 @@ export async function countProducts(filters: ProductFilters = {}): Promise<numbe
 
   if (filters.inStock) conditions.push(gt(products.stock, 0));
   if (filters.onSale) conditions.push(isNotNull(products.oldPriceTiyin));
+  if (filters.featured) conditions.push(eq(products.isFeatured, true));
   if (typeof filters.minTiyin === "number") conditions.push(gte(products.priceTiyin, filters.minTiyin));
   if (typeof filters.maxTiyin === "number") conditions.push(lte(products.priceTiyin, filters.maxTiyin));
   if (filters.q && filters.q.trim()) {

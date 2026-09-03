@@ -44,6 +44,7 @@ export type ProductFilters = {
   brandLineSlug?: string;
   inStock?: boolean;
   onSale?: boolean;
+  featured?: boolean;
   minTiyin?: number;
   maxTiyin?: number;
   sort?: "popular" | "new" | "price_asc" | "price_desc" | "random";

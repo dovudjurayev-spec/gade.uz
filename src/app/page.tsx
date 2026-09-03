@@ -3,7 +3,6 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { listCategories, getFeaturedProducts, listProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
-import { Reveal } from "@/components/ui/reveal";
 
 const CATEGORY_TILE_IMAGES: Record<string, string> = {
   makiyazh: "/categories/makiyazh.png",
@@ -74,10 +73,8 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {vanilla.map((p, i) => (
-              <Reveal key={p.id} delay={i * 80}>
-                <ProductCard product={p} />
-              </Reveal>
+            {vanilla.map((p) => (
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         </section>
@@ -156,10 +153,8 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {bestSellers.map((p, i) => (
-              <Reveal key={p.id} delay={(i % 4) * 80}>
-                <ProductCard product={p} />
-              </Reveal>
+            {bestSellers.map((p) => (
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         </section>
