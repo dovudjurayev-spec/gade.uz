@@ -15,8 +15,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const initial = (customer.name?.trim()?.[0] || customer.email?.[0] || customer.phone?.slice(-2, -1) || "G").toUpperCase();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 md:px-8 py-10 md:py-14 md:grid md:grid-cols-[15rem_1fr] md:gap-10 md:items-start">
-      <aside className="mb-8 md:mb-0 md:sticky md:top-32 md:self-start">
+    <div className="mx-auto max-w-6xl px-4 md:px-8 py-10 md:py-14 md:grid md:grid-cols-[15rem_1fr] md:gap-10 md:items-start md:min-h-[calc(100vh-8rem)]">
+      <aside className="mb-8 md:mb-0 md:sticky md:top-32 md:self-start md:h-fit">
         <div>
           <div className="flex items-center gap-3 pb-5 mb-5 border-b border-neutral-200">
             <div className="h-11 w-11 rounded-full bg-neutral-900 text-white grid place-items-center text-sm font-medium">

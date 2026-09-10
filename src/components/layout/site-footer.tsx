@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Instagram, Send, Phone, MapPin, Mail, ArrowUpRight } from "lucide-react";
+import { Instagram, Send, Phone, ArrowUpRight } from "lucide-react";
 
 export function SiteFooter() {
   return (
@@ -56,13 +56,13 @@ export function SiteFooter() {
               Официальный дистрибьютор GADE Cosmetics в Узбекистане. Профессиональный уход — прямо к вам домой.
             </p>
             <div className="flex items-center gap-2">
-              <SocialLink href="https://instagram.com/" label="Instagram">
+              <SocialLink href="https://www.instagram.com/gade_uz" label="Instagram">
                 <Instagram className="h-4 w-4" strokeWidth={1.5} />
               </SocialLink>
-              <SocialLink href="https://t.me/" label="Telegram">
+              <SocialLink href="https://t.me/jade_tashkent" label="Telegram">
                 <Send className="h-4 w-4" strokeWidth={1.5} />
               </SocialLink>
-              <SocialLink href="tel:+998000000000" label="Позвонить">
+              <SocialLink href="tel:+998970082608" label="Позвонить">
                 <Phone className="h-4 w-4" strokeWidth={1.5} />
               </SocialLink>
             </div>
@@ -89,16 +89,20 @@ export function SiteFooter() {
             <div className="text-white text-[11px] uppercase tracking-[0.25em] mb-5">Контакты</div>
             <ul className="space-y-4 text-neutral-400">
               <li className="flex items-start gap-3">
-                <MapPin className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
-                <span>Ташкент, Мирабадский р-н<br />доставка по всему Узбекистану</span>
-              </li>
-              <li className="flex items-start gap-3">
                 <Phone className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
-                <a href="tel:+998000000000" className="hover:text-white transition-colors">+998 00 000 00 00</a>
+                <a href="tel:+998970082608" className="hover:text-white transition-colors">+998 97 008 26 08</a>
               </li>
               <li className="flex items-start gap-3">
-                <Mail className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
-                <a href="mailto:hello@gade.uz" className="hover:text-white transition-colors">hello@gade.uz</a>
+                <Send className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
+                <a href="https://t.me/jade_tashkent" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Наш Телеграм</a>
+              </li>
+              <li className="flex items-start gap-3">
+                <Send className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
+                <a href="https://t.me/GA_DE_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Заказ через бота</a>
+              </li>
+              <li className="flex items-start gap-3">
+                <Instagram className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
+                <a href="https://www.instagram.com/gade_uz" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Instagram</a>
               </li>
             </ul>
           </div>

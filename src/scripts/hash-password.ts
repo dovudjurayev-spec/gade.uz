@@ -8,6 +8,10 @@ if (!password) {
 
 const salt = randomBytes(16);
 const hash = scryptSync(password, salt, 64);
-const escaped = `scrypt\\$${salt.toString("hex")}\\$${hash.toString("hex")}`;
-console.log(`ADMIN_PASSWORD_HASH=${escaped}`);
-console.log("\n(Знаки \\$ уже экранированы — Next.js env-парсер иначе интерпретирует $ как переменные)");
+const value = `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+
+console.log(`ADMIN_PASSWORD_HASH=${value}`);
+console.log(
+  "\nВставляй значение как есть, без экранирования \\$. " +
+    'Если dotenv в .env ругается на $, оберни в двойные кавычки: ADMIN_PASSWORD_HASH="scrypt$..."',
+);

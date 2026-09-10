@@ -114,7 +114,7 @@ export default async function HomePage() {
                         alt=""
                         fill
                         sizes="(max-width: 768px) 50vw, 33vw"
-                        className="object-contain object-center p-1 md:p-8 transition-transform duration-500 group-hover:scale-105"
+                        className={`object-contain object-center transition-transform duration-500 group-hover:scale-105 ${c.slug === "nogti" ? "p-1 md:p-4" : "p-4 md:p-14"}`}
                       />
                     )}
                   </div>
@@ -169,13 +169,16 @@ export default async function HomePage() {
             О бренде
           </span>
           <h2 className="mt-3 text-3xl md:text-4xl font-light tracking-tight text-neutral-900 leading-tight">
-            Профессиональная косметика<br />GA-DE
+            GA-DE — красота,<br />созданная для вас
           </h2>
           <p className="mt-5 text-base md:text-lg text-neutral-600 leading-relaxed">
-            GA-DE — израильский бренд с более чем 30-летней историей. Формулы разрабатываются в собственной лаборатории в Тель-Авиве и производятся на европейских фабриках.
+            Бренд декоративной косметики, который помогает подчеркнуть естественную красоту и создать безупречный образ на каждый день и для особых случаев.
           </p>
           <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-            На gade.uz — официальная дистрибуция в Узбекистане: только оригинальная продукция, актуальные партии и полный ассортимент декоративной косметики, ухода и ароматов.
+            В коллекции GA-DE собраны средства для макияжа лица, глаз и губ, включая тональные основы, пудры, румяна, тени, туши, помады и другие продукты, которые легко сочетать между собой.
+          </p>
+          <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+            GA-DE — ваш ежедневный ритуал красоты, вдохновения и уверенности.
           </p>
           <Link
             href="/about"
