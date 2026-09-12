@@ -10,7 +10,7 @@ export const WAREHOUSE = {
 
 export const DELIVERY_BASE_TIYIN = 20_000_00;
 export const DELIVERY_PER_KM_TIYIN = 3_000_00;
-export const FREE_DELIVERY_THRESHOLD_TIYIN = 500_000_00;
+export const FREE_DELIVERY_THRESHOLD_TIYIN = 1_000_000_00;
 export const REGION_DELIVERY_TIYIN = 45_000_00;
 
 export type DeliveryTariff = {

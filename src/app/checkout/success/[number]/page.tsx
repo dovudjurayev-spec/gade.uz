@@ -57,7 +57,7 @@ export default async function SuccessPage({
             {
               payme: "Payme (онлайн)",
               click: "Click (онлайн)",
-              card_on_delivery: "Картой при получении",
+              card_on_delivery: "Картой при самовывозе",
               cash_on_delivery: "Наличными при получении",
             }[order.paymentMethod]
           }

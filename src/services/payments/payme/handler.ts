@@ -81,7 +81,7 @@ async function createTransaction(params: RpcParams): Promise<RpcResult> {
       eq(paymentTransactions.status, "created"),
     ),
   });
-  if (otherActive) return err(PaymeError.CannotPerform);
+  if (otherActive) return err(PaymeError.InvalidAccount);
 
   const [inserted] = await db
     .insert(paymentTransactions)

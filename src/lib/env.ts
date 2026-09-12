@@ -29,6 +29,7 @@ const envSchema = z.object({
 
   PAYME_MERCHANT_ID: z.string().optional(),
   PAYME_MERCHANT_KEY: z.string().optional(),
+  PAYME_TEST_KEY: z.string().optional(),
   CLICK_MERCHANT_ID: z.string().optional(),
   CLICK_SERVICE_ID: z.string().optional(),
   CLICK_SECRET_KEY: z.string().optional(),

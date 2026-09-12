@@ -185,7 +185,7 @@ export function CheckoutForm({
             <OptionTile
               icon={Package}
               title="В регион"
-              subtitle={formatPrice(REGION_DELIVERY)}
+              subtitle="По тарифам почты BTS"
               checked={delivery === "region_shipping"}
               onSelect={() => setDelivery("region_shipping")}
             />
@@ -259,8 +259,8 @@ export function CheckoutForm({
             />
             <OptionTile
               icon={CreditCard}
-              title="Картой при получении"
-              subtitle="Терминал у курьера"
+              title="Картой при самовывозе"
+              subtitle="Оплата на складе"
               checked={payment === "card_on_delivery"}
               onSelect={() => setPayment("card_on_delivery")}
             />
