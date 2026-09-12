@@ -15,8 +15,8 @@ export default async function AccountLayout({ children }: { children: React.Reac
   const initial = (customer.name?.trim()?.[0] || customer.email?.[0] || customer.phone?.slice(-2, -1) || "G").toUpperCase();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 md:px-8 py-10 md:py-14 md:grid md:grid-cols-[15rem_1fr] md:gap-10 md:items-start md:min-h-[calc(100vh-8rem)]">
-      <aside className="mb-8 md:mb-0 md:sticky md:top-32 md:self-start md:h-fit">
+    <div className="mx-auto max-w-6xl px-4 md:px-8 py-10 md:py-14 md:flex md:gap-10 md:items-start">
+      <aside className="mb-8 md:mb-0 md:w-60 md:shrink-0 md:self-start">
         <div>
           <div className="flex items-center gap-3 pb-5 mb-5 border-b border-neutral-200">
             <div className="h-11 w-11 rounded-full bg-neutral-900 text-white grid place-items-center text-sm font-medium">
@@ -33,7 +33,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
           <form action={logoutAction} className="mt-5 pt-5 border-t border-neutral-200">
             <button
               type="submit"
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-neutral-500 hover:bg-neutral-100 hover:text-red-600 w-full transition-colors"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-neutral-500 hover:bg-neutral-100 hover:text-red-600 w-full transition-colors"
             >
               <LogOut className="h-4 w-4" strokeWidth={1.5} />
               Выйти
@@ -42,7 +42,7 @@ export default async function AccountLayout({ children }: { children: React.Reac
         </div>
       </aside>
 
-      <main className="min-w-0">{children}</main>
+      <main className="min-w-0 md:flex-1 md:min-h-[calc(100vh-8rem)]">{children}</main>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function AccountNav() {
             key={it.href}
             href={it.href}
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+              "flex items-center gap-3 px-3 py-2.5 text-sm transition-colors",
               active
                 ? "bg-neutral-900 text-white"
                 : "text-neutral-700 hover:bg-neutral-100"

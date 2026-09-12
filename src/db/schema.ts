@@ -8,6 +8,7 @@ import {
   bigint,
   boolean,
   numeric,
+  doublePrecision,
   timestamp,
   jsonb,
   uniqueIndex,
@@ -162,6 +163,8 @@ export const customerAddresses = pgTable(
     street: varchar("street", { length: 300 }).notNull(),
     apartment: varchar("apartment", { length: 50 }),
     comment: text("comment"),
+    lat: doublePrecision("lat"),
+    lng: doublePrecision("lng"),
     isDefault: boolean("is_default").notNull().default(false),
   },
   (t) => ({

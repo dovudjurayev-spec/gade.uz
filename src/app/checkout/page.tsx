@@ -42,7 +42,6 @@ export default async function CheckoutPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 md:px-8 py-8">
-      <h1 className="text-2xl md:text-3xl mb-6">Оформление заказа</h1>
       <CheckoutForm
         initialName={customer?.name ?? ""}
         initialPhone={customer?.phone ? formatPhoneUz(customer.phone) : ""}

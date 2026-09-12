@@ -14,6 +14,8 @@ const schema = z.object({
   street: z.string().min(1).max(300),
   apartment: z.string().max(50).optional(),
   comment: z.string().max(500).optional(),
+  lat: z.number().min(-90).max(90).nullable().optional(),
+  lng: z.number().min(-180).max(180).nullable().optional(),
   isDefault: z.boolean().optional(),
 });
 

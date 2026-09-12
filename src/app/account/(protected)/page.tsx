@@ -77,7 +77,7 @@ export default async function AccountOverview() {
         </div>
 
         {recentOrders.length === 0 ? (
-          <div className="border border-dashed border-neutral-300 rounded-2xl px-6 py-12 text-center">
+          <div className="border border-dashed border-neutral-300 px-6 py-12 text-center">
             <div className="mx-auto h-12 w-12 rounded-full bg-neutral-100 grid place-items-center mb-4">
               <ShoppingBag className="h-5 w-5 text-neutral-500" strokeWidth={1.5} />
             </div>
@@ -94,7 +94,7 @@ export default async function AccountOverview() {
             </Link>
           </div>
         ) : (
-          <div className="border border-neutral-200 rounded-2xl divide-y divide-neutral-200 overflow-hidden">
+          <div className="border border-neutral-200 divide-y divide-neutral-200 overflow-hidden">
             {recentOrders.map((o) => (
               <Link
                 key={o.id}
@@ -149,7 +149,7 @@ function StatCard({
   return (
     <Link
       href={href}
-      className="group relative flex items-center justify-between gap-4 border border-neutral-200 rounded-2xl p-5 hover:border-neutral-900 hover:shadow-sm transition-all"
+      className="group relative flex items-center justify-between gap-4 border border-neutral-200 p-5 hover:border-neutral-900 hover:shadow-sm transition-all"
     >
       <div>
         <div className="text-[11px] uppercase tracking-widest text-neutral-500 mb-2">

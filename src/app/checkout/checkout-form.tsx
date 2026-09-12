@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
-import { MapPin, Plus, Check, Truck, Package, Store, CreditCard, Banknote, Smartphone, Building2, Navigation, Home, DoorOpen } from "lucide-react";
+import { Fragment, useEffect, useRef, useState, useTransition } from "react";
+import { MapPin, Plus, Check, Truck, Package, Store, CreditCard, Banknote, Smartphone, Building2, Navigation, Home, ArrowLeft, ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useCart, cartSubtotal } from "@/stores/cart";
 import { formatPrice } from "@/lib/money";
@@ -44,6 +44,8 @@ export function CheckoutForm({
   const [showMap, setShowMap] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [quote, setQuote] = useState<{ priceTiyin: number; distanceKm: number } | null>(null);
@@ -116,11 +118,52 @@ export function CheckoutForm({
     setPhone(`+998 ${parts.join(" ")}`.trim());
   }
 
+  function isStep1Valid() {
+    return name.trim().length > 0 && phone.replace(/\D/g, "").length === 12;
+  }
+  function isStep2Valid() {
+    if (delivery === "courier_tashkent") return address.trim().length > 0 && !!coords;
+    if (delivery === "region_shipping") return address.trim().length > 0;
+    return true;
+  }
+
+  function goNext() {
+    setError(null);
+    if (step === 1) {
+      if (!isStep1Valid()) {
+        setError("Укажите имя и телефон в формате +998 XX XXX XX XX");
+        return;
+      }
+      setStep(2);
+    } else if (step === 2) {
+      if (!isStep2Valid()) {
+        setError(
+          delivery === "courier_tashkent" && !coords
+            ? "Отметьте точку доставки на карте"
+            : "Укажите адрес доставки",
+        );
+        return;
+      }
+      setStep(3);
+    }
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function goBack() {
+    setError(null);
+    setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s));
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (step !== 3) {
+      goNext();
+      return;
+    }
     setError(null);
     if (delivery === "courier_tashkent" && !coords) {
       setError("Отметьте точку доставки на карте");
+      setStep(2);
       return;
     }
     const finalAddress =
@@ -150,8 +193,13 @@ export function CheckoutForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="grid md:grid-cols-[1fr_360px] gap-8">
+    <form onSubmit={handleSubmit}>
+      <StepIndicator step={step} onStepClick={(s) => { if (s < step) { setStep(s); setError(null); } }} />
+
+      <div className="grid md:grid-cols-[1fr_360px] gap-8 mt-10">
       <div className="space-y-6">
+        {step === 1 && (<>
+        <StepHeader n={1} title="Контакты" subtitle="Как с вами связаться курьеру и менеджеру" />
         <Field label="Ваше имя">
           <input
             required
@@ -172,8 +220,11 @@ export function CheckoutForm({
             placeholder="+998 __ ___ __ __"
           />
         </Field>
+        </>)}
 
-        <Field label="Доставка">
+        {step === 2 && (<>
+        <StepHeader n={2} title="Доставка" subtitle="Куда и как доставить заказ" />
+        <Field label="Способ доставки">
           <div className="grid gap-2 sm:grid-cols-2">
             <OptionTile
               icon={Truck}
@@ -208,22 +259,41 @@ export function CheckoutForm({
                 options={savedAddresses}
               />
             </Field>
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setShowMap((v) => !v)}
-                className="inline-flex items-center gap-2 border border-neutral-300 hover:border-neutral-900 h-11 px-4 text-sm uppercase tracking-widest transition-colors"
+            <div className="space-y-3">
+              <div
+                className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border p-4 transition-colors ${
+                  coords
+                    ? "border-neutral-200 bg-white"
+                    : "border-neutral-300 bg-neutral-50"
+                }`}
               >
-                <MapPin className="h-4 w-4" strokeWidth={1.5} />
-                {showMap ? "Скрыть карту" : coords ? "Изменить точку на карте" : "Уточнить точку на карте"}
-              </button>
-              {!coords && (
-                <p className="text-xs text-neutral-500">
-                  Отметьте точку на карте — так мы точно рассчитаем стоимость доставки.
-                </p>
-              )}
+                <div className="shrink-0 h-10 w-10 grid place-items-center rounded-full bg-neutral-900 text-white">
+                  <MapPin className="h-5 w-5" strokeWidth={1.5} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-neutral-900">
+                    {coords ? "Точка на карте отмечена" : "Отметьте точку на карте"}
+                  </div>
+                  <div className="text-xs text-neutral-600 mt-0.5 leading-relaxed">
+                    {coords
+                      ? "Стоимость доставки рассчитана точно по координатам."
+                      : "Так мы точно рассчитаем стоимость доставки до вашего дома."}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMap((v) => !v)}
+                  className={`shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 text-xs uppercase tracking-widest transition-colors cursor-pointer ${
+                    coords
+                      ? "border border-neutral-300 hover:border-neutral-900 bg-white"
+                      : "bg-neutral-900 hover:bg-black text-white"
+                  }`}
+                >
+                  {showMap ? "Скрыть" : coords ? "Изменить" : "Открыть карту"}
+                </button>
+              </div>
               {showMap && (
-                <div className="pt-2">
+                <div>
                   <DeliveryMap value={coords} onChange={setCoords} />
                 </div>
               )}
@@ -240,7 +310,10 @@ export function CheckoutForm({
             />
           </Field>
         )}
+        </>)}
 
+        {step === 3 && (<>
+        <StepHeader n={3} title="Оплата и подтверждение" subtitle="Выберите способ оплаты" />
         <Field label="Оплата">
           <div className="grid gap-2 sm:grid-cols-2">
             <OptionTile
@@ -283,9 +356,25 @@ export function CheckoutForm({
             placeholder="Позвонить после 18:00"
           />
         </Field>
+
+        <ReviewSummary
+          name={name}
+          phone={phone}
+          delivery={delivery}
+          address={address}
+          coords={coords}
+          payment={payment}
+        />
+        </>)}
+
+        {error && (
+          <div className="border border-red-200 bg-red-50 text-sm text-red-700 px-4 py-3">
+            {error}
+          </div>
+        )}
       </div>
 
-      <aside className="md:sticky md:top-24 md:self-start border p-6 space-y-4 md:max-h-[calc(100vh-8rem)] md:overflow-auto"><div className="space-y-4">
+      <aside className="md:self-start border p-6 space-y-4"><div className="space-y-4">
         <div className="text-sm font-medium">В заказе</div>
         <ul className="space-y-2 text-sm border-b pb-4">
           {items.map((i) => (
@@ -296,46 +385,87 @@ export function CheckoutForm({
           ))}
         </ul>
         <Row label="Товары" value={formatPrice(subtotal)} />
-        <Row
-          label={
-            delivery === "courier_tashkent" && quote
-              ? `Доставка · ${quote.distanceKm} км`
-              : "Доставка"
-          }
-          value={
-            delivery === "courier_tashkent" && !coords
-              ? "укажите точку"
-              : quoting
-                ? "считаем…"
-                : quoteError
-                  ? "—"
-                  : deliveryCost === 0
-                    ? "бесплатно"
-                    : formatPrice(deliveryCost)
-          }
+        <DeliveryRow
+          delivery={delivery}
+          coords={coords}
+          quote={quote}
+          quoting={quoting}
+          quoteError={quoteError}
+          deliveryCost={deliveryCost}
         />
         {quoteError && (
           <div className="text-xs text-red-600 -mt-2">{quoteError}</div>
         )}
         <div className="border-t pt-3 flex justify-between font-semibold text-lg">
-          <span>Итого</span>
-          <span>{formatPrice(total)}</span>
+          <span>
+            {delivery === "courier_tashkent" && !coords ? "Предварительно" : "Итого"}
+          </span>
+          <span>
+            {delivery === "courier_tashkent" && !coords && (
+              <span className="text-neutral-500 font-normal text-sm mr-1">от</span>
+            )}
+            {formatPrice(total)}
+          </span>
         </div>
-
-        {error && <div className="text-sm text-red-600">{error}</div>}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="w-full min-h-[52px] bg-brand text-white text-sm uppercase tracking-widest hover:bg-brand-accent transition-colors disabled:bg-neutral-400"
-        >
-          {pending ? "Оформляем..." : "Оформить заказ"}
-        </button>
+        {delivery === "courier_tashkent" && !coords && (
+          <div className="-mt-2 text-xs text-neutral-500 leading-relaxed">
+            Указана цена за товары. Стоимость доставки добавим после того,
+            как вы отметите точку на карте на шаге «Доставка».
+          </div>
+        )}
 
         <p className="text-xs text-neutral-500">
           Нажимая «Оформить заказ», вы соглашаетесь с публичной офертой.
         </p>
       </div></aside>
+      </div>
+
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 mt-8 pt-6 border-t border-neutral-100">
+        {step > 1 ? (
+          <button
+            type="button"
+            onClick={goBack}
+            className="inline-flex items-center justify-center gap-2 h-12 px-5 text-xs uppercase tracking-widest text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+            Назад
+          </button>
+        ) : (
+          <Link
+            href="/cart"
+            className="inline-flex items-center justify-center gap-2 h-12 px-5 text-xs uppercase tracking-widest text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+            К корзине
+          </Link>
+        )}
+        {step < 3 ? (() => {
+          const canProceed = step === 1 ? isStep1Valid() : isStep2Valid();
+          return (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!canProceed}
+              className={`sm:ml-auto inline-flex items-center justify-center gap-2 h-12 px-10 text-white text-xs uppercase tracking-widest transition-colors ${
+                canProceed
+                  ? "bg-neutral-900 hover:bg-black cursor-pointer"
+                  : "bg-neutral-300 cursor-not-allowed"
+              }`}
+            >
+              Далее
+              <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            </button>
+          );
+        })() : (
+          <button
+            type="submit"
+            disabled={pending}
+            className="sm:ml-auto inline-flex items-center justify-center gap-2 h-12 px-10 bg-neutral-900 hover:bg-black text-white text-xs uppercase tracking-widest transition-colors cursor-pointer disabled:bg-neutral-400"
+          >
+            {pending ? "Оформляем…" : "Оформить заказ"}
+          </button>
+        )}
+      </div>
     </form>
   );
 }
@@ -346,6 +476,133 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <div className="text-sm font-medium mb-2">{label}</div>
       {children}
     </label>
+  );
+}
+
+const STEPS = [
+  { n: 1, title: "Контакты" },
+  { n: 2, title: "Доставка" },
+  { n: 3, title: "Оплата" },
+] as const;
+
+function StepIndicator({
+  step,
+  onStepClick,
+}: {
+  step: 1 | 2 | 3;
+  onStepClick: (s: 1 | 2 | 3) => void;
+}) {
+  return (
+    <div role="list" className="flex items-center w-full">
+      {STEPS.map((s, i) => {
+        const done = step > s.n;
+        const active = step === s.n;
+        const clickable = done;
+        return (
+          <Fragment key={s.n}>
+            <button
+              type="button"
+              role="listitem"
+              disabled={!clickable}
+              onClick={() => clickable && onStepClick(s.n as 1 | 2 | 3)}
+              className={`flex items-center gap-3 shrink-0 ${clickable ? "cursor-pointer" : "cursor-default"}`}
+            >
+              <span
+                className={`shrink-0 h-9 w-9 grid place-items-center border text-xs font-medium transition-colors ${
+                  active
+                    ? "bg-neutral-900 text-white border-neutral-900"
+                    : done
+                      ? "bg-white text-neutral-900 border-neutral-900"
+                      : "bg-white text-neutral-400 border-neutral-200"
+                }`}
+              >
+                {done ? <Check className="h-4 w-4" strokeWidth={2} /> : s.n}
+              </span>
+              <span
+                className={`hidden sm:inline text-xs uppercase tracking-widest whitespace-nowrap ${
+                  active ? "text-neutral-900" : done ? "text-neutral-700" : "text-neutral-400"
+                }`}
+              >
+                {s.title}
+              </span>
+            </button>
+            {i < STEPS.length - 1 && (
+              <div
+                className={`flex-1 h-px mx-3 sm:mx-6 transition-colors ${
+                  step > s.n ? "bg-neutral-900" : "bg-neutral-200"
+                }`}
+              />
+            )}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+function StepHeader({ n, title, subtitle }: { n: number; title: string; subtitle?: string }) {
+  return (
+    <div className="pb-2">
+      <div className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Шаг {n} из 3</div>
+      <h2 className="text-2xl md:text-3xl mt-1">{title}</h2>
+      {subtitle && <p className="text-sm text-neutral-600 mt-1">{subtitle}</p>}
+    </div>
+  );
+}
+
+const DELIVERY_LABELS: Record<string, string> = {
+  courier_tashkent: "Курьер по Ташкенту",
+  region_shipping: "В регион (BTS)",
+  pickup: "Самовывоз",
+};
+const PAYMENT_LABELS: Record<string, string> = {
+  payme: "Payme (онлайн)",
+  click: "Click (онлайн)",
+  card_on_delivery: "Картой при самовывозе",
+  cash_on_delivery: "Наличными при получении",
+};
+
+function ReviewSummary({
+  name,
+  phone,
+  delivery,
+  address,
+  coords,
+  payment,
+}: {
+  name: string;
+  phone: string;
+  delivery: string;
+  address: string;
+  coords: { lat: number; lng: number } | null;
+  payment: string;
+}) {
+  return (
+    <div className="border border-neutral-200 bg-neutral-50 p-5 space-y-3">
+      <div className="text-xs uppercase tracking-widest text-neutral-500">Проверьте данные</div>
+      <SummaryLine label="Имя" value={name || "—"} />
+      <SummaryLine label="Телефон" value={phone || "—"} />
+      <SummaryLine label="Доставка" value={DELIVERY_LABELS[delivery] ?? delivery} />
+      {(delivery === "courier_tashkent" || delivery === "region_shipping") && (
+        <SummaryLine label="Адрес" value={address || "—"} />
+      )}
+      {delivery === "courier_tashkent" && coords && (
+        <SummaryLine
+          label="Точка на карте"
+          value={`${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`}
+        />
+      )}
+      <SummaryLine label="Оплата" value={PAYMENT_LABELS[payment] ?? payment} />
+    </div>
+  );
+}
+
+function SummaryLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-3 text-sm">
+      <span className="w-32 shrink-0 text-neutral-500">{label}</span>
+      <span className="min-w-0 flex-1 text-neutral-900 break-words">{value}</span>
+    </div>
   );
 }
 
@@ -559,8 +816,8 @@ function AddressComposer({
   }
 
   return (
-    <div className="border bg-white">
-      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-neutral-200">
+    <div className="border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100">
         <ComposerField
           icon={Building2}
           label="Город"
@@ -578,21 +835,14 @@ function AddressComposer({
           onChange={(v) => update({ district: v })}
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] divide-y sm:divide-y-0 sm:divide-x divide-neutral-200 border-t border-neutral-200">
+      <div className="border-t border-neutral-100">
         <ComposerField
           icon={Home}
-          label="Улица и дом"
-          placeholder="ул. Нукус 12"
+          label="Улица, дом, квартира"
+          placeholder="ул. Нукус 12, кв. 5"
           value={street}
           onChange={(v) => update({ street: v })}
           required
-        />
-        <ComposerField
-          icon={DoorOpen}
-          label="Квартира"
-          placeholder="5"
-          value={apartment}
-          onChange={(v) => update({ apartment: v })}
         />
       </div>
     </div>
@@ -617,19 +867,22 @@ function ComposerField({
   required?: boolean;
 }) {
   return (
-    <label className="group flex items-center gap-3 px-4 py-3 focus-within:bg-neutral-50 transition-colors cursor-text">
-      <div className="shrink-0 h-8 w-8 grid place-items-center rounded-full bg-neutral-100 text-neutral-500 group-focus-within:bg-neutral-900 group-focus-within:text-white transition-colors">
+    <label className="group flex items-center gap-3 px-5 py-4 focus-within:bg-neutral-50 hover:bg-neutral-50/60 transition-colors cursor-text">
+      <div className="shrink-0 h-9 w-9 grid place-items-center rounded-full bg-neutral-100 text-neutral-500 group-focus-within:bg-neutral-900 group-focus-within:text-white transition-colors">
         <Icon className="h-4 w-4" strokeWidth={1.5} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] uppercase tracking-widest text-neutral-500">{label}</div>
+        <div className="text-[10px] uppercase tracking-[0.15em] font-medium text-neutral-500 group-focus-within:text-neutral-900 transition-colors">
+          {label}
+          {required && <span className="text-neutral-900 ml-0.5">*</span>}
+        </div>
         <input
           ref={inputRef}
           required={required}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full bg-transparent text-sm focus:outline-none placeholder:text-neutral-300"
+          className="w-full bg-transparent text-sm text-neutral-900 focus:outline-none placeholder:text-neutral-300 mt-0.5"
         />
       </div>
     </label>
@@ -641,6 +894,56 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-neutral-600">{label}</span>
       <span>{value}</span>
+    </div>
+  );
+}
+
+function DeliveryRow({
+  delivery,
+  coords,
+  quote,
+  quoting,
+  quoteError,
+  deliveryCost,
+}: {
+  delivery: "courier_tashkent" | "region_shipping" | "pickup";
+  coords: { lat: number; lng: number } | null;
+  quote: { priceTiyin: number; distanceKm: number } | null;
+  quoting: boolean;
+  quoteError: string | null;
+  deliveryCost: number;
+}) {
+  const needsPoint = delivery === "courier_tashkent" && !coords;
+  const label =
+    delivery === "courier_tashkent" && quote
+      ? `Доставка · ${quote.distanceKm} км`
+      : "Доставка";
+
+  if (needsPoint) return null;
+
+  let value: React.ReactNode;
+  let valueClass = "";
+  if (quoting) {
+    value = (
+      <span className="inline-flex items-center gap-2 text-neutral-500">
+        <span className="h-1.5 w-1.5 rounded-full bg-neutral-400 animate-pulse" />
+        считаем…
+      </span>
+    );
+  } else if (quoteError) {
+    value = "—";
+    valueClass = "text-neutral-500";
+  } else if (deliveryCost === 0) {
+    value = "Бесплатно";
+    valueClass = "text-emerald-700 font-medium";
+  } else {
+    value = formatPrice(deliveryCost);
+  }
+
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-neutral-600">{label}</span>
+      <span className={valueClass}>{value}</span>
     </div>
   );
 }

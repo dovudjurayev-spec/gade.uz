@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ShoppingBag, ArrowRight, Heart } from "lucide-react";
 import { useCart, cartSubtotal } from "@/stores/cart";
 import { formatPrice } from "@/lib/money";
 
@@ -11,16 +12,66 @@ export default function CartPage() {
   const subtotal = cartSubtotal(items);
 
   if (items.length === 0) {
+    const suggestions = [
+      { label: "Макияж", href: "/catalog?category=makeup" },
+      { label: "Уход за лицом", href: "/catalog?category=face-care" },
+      { label: "Парфюмерия", href: "/catalog?category=perfume" },
+      { label: "Аксессуары", href: "/catalog?category=accessories" },
+    ];
+
     return (
-      <div className="mx-auto max-w-3xl px-4 md:px-8 py-16 text-center">
-        <h1 className="text-2xl mb-4">Корзина пуста</h1>
-        <p className="text-neutral-600 mb-8">Начните с каталога — там всё, что есть в наличии.</p>
-        <Link
-          href="/catalog"
-          className="inline-flex items-center justify-center bg-brand text-white px-8 py-3 text-sm uppercase tracking-widest hover:bg-brand-accent transition-colors"
-        >
-          В каталог
-        </Link>
+      <div className="mx-auto max-w-5xl px-4 md:px-8 py-16 md:py-24">
+        <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
+          <div className="hidden md:flex order-1 justify-center">
+            <ShoppingBag className="h-56 w-56 text-neutral-800" strokeWidth={1} />
+          </div>
+
+          <div className="order-2">
+            <div className="text-[11px] uppercase tracking-[0.3em] text-neutral-500 mb-4">
+              Корзина
+            </div>
+            <h1 className="text-4xl md:text-5xl font-light tracking-tight text-neutral-900 mb-4 leading-[1.1]">
+              Здесь пока пусто
+            </h1>
+            <p className="text-neutral-600 mb-8 max-w-md leading-relaxed">
+              Загляните в каталог — соберите ритуал ухода, любимые оттенки и ароматы. Всё, что есть в наличии, — уже здесь.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-10">
+              <Link
+                href="/catalog"
+                className="inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-black text-white px-8 py-4 text-xs uppercase tracking-widest transition-colors"
+              >
+                В каталог
+                <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+              </Link>
+              <Link
+                href="/account/favorites"
+                className="inline-flex items-center justify-center gap-2 border border-neutral-300 hover:border-neutral-900 text-neutral-900 px-8 py-4 text-xs uppercase tracking-widest transition-colors"
+              >
+                <Heart className="h-4 w-4" strokeWidth={1.5} />
+                Избранное
+              </Link>
+            </div>
+
+            <div>
+              <div className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-3">
+                Популярные разделы
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {suggestions.map((s) => (
+                  <Link
+                    key={s.href}
+                    href={s.href}
+                    className="inline-flex items-center gap-1.5 border border-neutral-200 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white text-neutral-700 px-4 py-2 text-sm transition-colors"
+                  >
+                    {s.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
