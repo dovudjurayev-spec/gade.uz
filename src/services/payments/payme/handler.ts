@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders, paymentTransactions } from "@/db/schema";
 import { PaymeError, PaymeState } from "./errors";
@@ -219,6 +219,37 @@ async function checkTransaction(params: RpcParams): Promise<RpcResult> {
   };
 }
 
+async function getStatement(params: RpcParams): Promise<RpcResult> {
+  const from = Number(params.from);
+  const to = Number(params.to);
+  const rows = await db.query.paymentTransactions.findMany({
+    where: and(
+      eq(paymentTransactions.provider, "payme"),
+      gte(paymentTransactions.createdAt, new Date(from)),
+      lte(paymentTransactions.createdAt, new Date(to)),
+    ),
+  });
+  const transactions = rows.map((tx) => {
+    const raw = (tx.rawPayload ?? {}) as {
+      time?: number; perform_time?: number; cancel_time?: number;
+      state?: number; reason?: number; account?: Account;
+    };
+    return {
+      id: tx.providerTxId,
+      time: raw.time ?? tx.createdAt.getTime(),
+      amount: tx.amountTiyin,
+      account: raw.account ?? { order_id: String(tx.orderId) },
+      create_time: raw.time ?? tx.createdAt.getTime(),
+      perform_time: raw.perform_time ?? 0,
+      cancel_time: raw.cancel_time ?? 0,
+      transaction: String(tx.id),
+      state: raw.state ?? PaymeState.Created,
+      reason: raw.reason ?? null,
+    };
+  });
+  return { result: { transactions } };
+}
+
 export async function handlePaymeRpc(req: PaymeRpcRequest): Promise<RpcResult> {
   try {
     switch (req.method) {
@@ -227,6 +258,7 @@ export async function handlePaymeRpc(req: PaymeRpcRequest): Promise<RpcResult> {
       case "PerformTransaction":      return await performTransaction(req.params);
       case "CancelTransaction":       return await cancelTransaction(req.params);
       case "CheckTransaction":        return await checkTransaction(req.params);
+      case "GetStatement":            return await getStatement(req.params);
       default:
         return err(PaymeError.CannotPerform, `Unknown method: ${req.method}`);
     }
