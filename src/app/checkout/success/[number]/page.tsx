@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders } from "@/db/schema";
@@ -37,6 +37,12 @@ export default async function SuccessPage({
 
   const requiresOnlinePayment =
     order.paymentMethod === "payme" || order.paymentMethod === "click";
+
+  // Пока онлайн-заказ не оплачен — не показываем "Спасибо",
+  // отправляем пользователя на страницу оплаты.
+  if (requiresOnlinePayment && order.status === "pending_payment") {
+    redirect(`/payment/${order.number}${tokenSuffix}`);
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 md:px-8 py-16 text-center">

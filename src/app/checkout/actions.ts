@@ -11,5 +11,7 @@ export async function submitOrderAction(input: CreateOrderInput) {
   }
   const token = signOrderNumber(result.orderNumber);
   const suffix = token ? `?t=${token}` : "";
-  redirect(`/checkout/success/${result.orderNumber}${suffix}`);
+  const isOnline = input.paymentMethod === "payme" || input.paymentMethod === "click";
+  const target = isOnline ? "/payment/" : "/checkout/success/";
+  redirect(`${target}${result.orderNumber}${suffix}`);
 }
