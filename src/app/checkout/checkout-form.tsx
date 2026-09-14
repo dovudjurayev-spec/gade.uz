@@ -38,7 +38,7 @@ export function CheckoutForm({
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone || "+998 ");
   const [delivery, setDelivery] = useState<"courier_tashkent" | "region_shipping" | "pickup">("courier_tashkent");
-  const [payment, setPayment] = useState<"payme" | "click" | "card_on_delivery" | "cash_on_delivery">("payme");
+  const [payment, setPayment] = useState<"payme" | "card_on_delivery" | "cash_on_delivery">("payme");
   const [address, setAddress] = useState(initialAddress);
   const [comment, setComment] = useState("");
   const [showMap, setShowMap] = useState(false);
@@ -160,12 +160,8 @@ export function CheckoutForm({
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (step !== 3) {
-      goNext();
-      return;
-    }
+  function placeOrder() {
+    if (step !== 3) return;
     setError(null);
     if (delivery === "courier_tashkent" && !coords) {
       setError("Отметьте точку доставки на карте");
@@ -190,16 +186,33 @@ export function CheckoutForm({
       });
       if (result && !result.ok) {
         setError(result.error);
-      } else {
-        // redirect произошёл в Server Action — на success-страницу
-        clear();
-        router.refresh();
+        return;
       }
+      if (result && result.ok && result.redirectUrl) {
+        // Онлайн-оплата: полноценный переход браузера на внешний URL Payme.
+        clear();
+        window.location.href = result.redirectUrl;
+        return;
+      }
+      // Оффлайн-оплата: redirect() уже сработал в Server Action.
+      clear();
+      router.refresh();
     });
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form
+      onSubmit={(e) => e.preventDefault()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          const el = e.target as HTMLElement;
+          const tag = el.tagName;
+          if (tag !== "TEXTAREA" && tag !== "BUTTON") {
+            e.preventDefault();
+          }
+        }
+      }}
+    >
       <StepIndicator step={step} onStepClick={(s) => { if (s < step) { setStep(s); setError(null); } }} />
 
       <div className="grid md:grid-cols-[1fr_360px] gap-8 mt-10">
@@ -335,13 +348,6 @@ export function CheckoutForm({
               checked={payment === "payme"}
               onSelect={() => setPayment("payme")}
             />
-            <OptionTile
-              icon={Smartphone}
-              title="Click"
-              subtitle="Онлайн-оплата"
-              checked={payment === "click"}
-              onSelect={() => setPayment("click")}
-            />
             {delivery === "pickup" && (
               <OptionTile
                 icon={CreditCard}
@@ -472,7 +478,8 @@ export function CheckoutForm({
           );
         })() : (
           <button
-            type="submit"
+            type="button"
+            onClick={placeOrder}
             disabled={pending}
             className="sm:ml-auto inline-flex items-center justify-center gap-2 h-12 px-10 bg-neutral-900 hover:bg-black text-white text-xs uppercase tracking-widest transition-colors cursor-pointer disabled:bg-neutral-400"
           >
@@ -571,7 +578,6 @@ const DELIVERY_LABELS: Record<string, string> = {
 };
 const PAYMENT_LABELS: Record<string, string> = {
   payme: "Payme (онлайн)",
-  click: "Click (онлайн)",
   card_on_delivery: "Картой при самовывозе",
   cash_on_delivery: "Наличными при получении",
 };

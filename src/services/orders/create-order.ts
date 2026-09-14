@@ -33,7 +33,7 @@ export const createOrderSchema = z.object({
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 
 export type CreateOrderResult =
-  | { ok: true; orderId: number; orderNumber: string }
+  | { ok: true; orderId: number; orderNumber: string; totalTiyin: number }
   | { ok: false; error: string };
 
 
@@ -205,7 +205,7 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
   // without waiting for cron. Errors are retried by the processor itself.
   void processQueue().catch((e) => console.error("[create-order] processQueue failed:", e));
 
-  return { ok: true, orderId: result.orderId, orderNumber: result.number };
+  return { ok: true, orderId: result.orderId, orderNumber: result.number, totalTiyin: total };
 }
 
 function generateOrderNumber(id: number): string {

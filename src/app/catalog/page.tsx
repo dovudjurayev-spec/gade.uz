@@ -271,8 +271,9 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                   | { kind: "card"; key: string; product: (typeof products)[number] };
                 const cells: Cell[] = [];
                 for (const l2 of orderedL2) {
-                  // Заголовок L2 показываем только если выбран корень (иначе — избыточно).
-                  if (!isL2Selected && orderedL2.length > 1) {
+                  // Заголовок L2 показываем, когда выбран корень (L1). Если выбран сам L2,
+                  // повторять его название бессмысленно, но L3-заголовки внутри — нужны.
+                  if (!isL2Selected) {
                     cells.push({ kind: "l2", key: `l2-${l2.id ?? "misc"}`, label: l2.name });
                   }
                   const hasL3Headers = l2.l3s.some((b) => b.id != null);
@@ -291,14 +292,14 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                       c.kind === "l2" ? (
                         <h2
                           key={c.key}
-                          className="col-span-full text-lg md:text-xl font-light tracking-tight text-neutral-900 mt-8 first:mt-0"
+                          className="col-span-full text-xl md:text-2xl font-light tracking-tight text-neutral-900 mt-10 mb-1 pb-2 border-b border-neutral-200 first:mt-0"
                         >
                           {c.label}
                         </h2>
                       ) : c.kind === "l3" ? (
                         <h3
                           key={c.key}
-                          className="col-span-full text-[11px] uppercase tracking-[0.25em] text-neutral-500 mt-4 first:mt-0"
+                          className="col-span-full text-[11px] uppercase tracking-[0.25em] text-neutral-600 mt-6 mb-1 first:mt-0"
                         >
                           {c.label}
                         </h3>
