@@ -81,7 +81,7 @@ async function processRoot(rootSlug: string, dryRun: boolean) {
     matched++;
     byCat.set(rule.note, (byCat.get(rule.note) ?? 0) + 1);
     if (!dryRun) {
-      await db.update(products).set({ categoryId: target.id, updatedAt: new Date() }).where(eq(products.id, p.id));
+      await db.update(products).set({ categoryId: target.id, categoryManualOverride: true, updatedAt: new Date() }).where(eq(products.id, p.id));
     }
     console.log(`${dryRun ? "·" : "✓"} #${p.id}  ${p.name}  →  ${rule.note}`);
   }

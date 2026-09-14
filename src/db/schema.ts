@@ -109,6 +109,7 @@ export const products = pgTable(
     isNew: boolean("is_new").notNull().default(false),
     images: jsonb("images").$type<string[]>().notNull().default([]),
     imagesManualOverride: boolean("images_manual_override").notNull().default(false),
+    categoryManualOverride: boolean("category_manual_override").notNull().default(false),
     imageFit: varchar("image_fit", { length: 16 }).notNull().default("contain"),
     billzId: varchar("billz_id", { length: 64 }),
     barcode: varchar("barcode", { length: 64 }),

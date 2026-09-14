@@ -177,7 +177,7 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   const sku = (rawSku ? `${rawSku}-${billzShort}` : billzShort).slice(0, 64);
 
   const existing = await db
-    .select({ id: products.id, categoryId: products.categoryId, brandLineId: products.brandLineId, description: products.description, imagesManualOverride: products.imagesManualOverride })
+    .select({ id: products.id, categoryId: products.categoryId, brandLineId: products.brandLineId, description: products.description, imagesManualOverride: products.imagesManualOverride, categoryManualOverride: products.categoryManualOverride })
     .from(products)
     .where(eq(products.billzId, p.id))
     .limit(1);
@@ -212,7 +212,10 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
     if (existing[0].imagesManualOverride) {
       delete patch.images;
     }
-    if (categoryId != null) {
+    if (existing[0].categoryManualOverride) {
+      // Ручная привязка админа — не трогаем.
+      if (existing[0].categoryId != null) result.categoryKept += 1;
+    } else if (categoryId != null) {
       patch.categoryId = categoryId;
       if (existing[0].categoryId == null) result.categoryAssigned += 1;
     } else if (existing[0].categoryId != null) {
