@@ -9,15 +9,36 @@ export const dynamic = "force-dynamic";
 // Basic auth: header "Basic base64(Paycom:MERCHANT_KEY)"
 // Если в БД сохранён пароль (после ChangePassword) — принимаем только его.
 // Иначе — fallback на env-ключи.
+function mask(s: string | null | undefined): string {
+  if (!s) return "<empty>";
+  if (s.length <= 6) return `len=${s.length}`;
+  return `${s.slice(0, 3)}…${s.slice(-3)} (len=${s.length})`;
+}
+
 async function verifyBasic(req: Request): Promise<boolean> {
   const header = req.headers.get("authorization");
-  if (!header || !header.startsWith("Basic ")) return false;
+  if (!header || !header.startsWith("Basic ")) {
+    console.log("[payme-auth] missing/invalid header:", header?.slice(0, 20));
+    return false;
+  }
   const decoded = Buffer.from(header.slice(6), "base64").toString("utf8");
   const [login, pass] = decoded.split(":");
-  if (login !== "Paycom" || !pass) return false;
+  if (login !== "Paycom" || !pass) {
+    console.log("[payme-auth] bad login:", login);
+    return false;
+  }
   const stored = await getStoredPaymePassword();
-  if (stored) return pass === stored;
-  return pass === env.PAYME_MERCHANT_KEY || pass === env.PAYME_TEST_KEY;
+  const ok = stored
+    ? pass === stored
+    : pass === env.PAYME_MERCHANT_KEY || pass === env.PAYME_TEST_KEY;
+  console.log("[payme-auth]", {
+    ok,
+    got: mask(pass),
+    stored: mask(stored),
+    envKey: mask(env.PAYME_MERCHANT_KEY),
+    envTest: mask(env.PAYME_TEST_KEY),
+  });
+  return ok;
 }
 
 export async function POST(req: Request) {

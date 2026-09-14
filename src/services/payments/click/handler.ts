@@ -1,8 +1,9 @@
 import crypto from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { orders, paymentTransactions } from "@/db/schema";
+import { orders, outboundQueue, paymentTransactions } from "@/db/schema";
 import { env } from "@/lib/env";
+import { processQueue } from "@/services/queue/processor";
 
 // Click Merchant API. Amount передаётся в СУМАХ (десятичное), заказы у нас в тийинах.
 // Prepare (action=0): проверить и вернуть merchant_prepare_id.
@@ -166,7 +167,12 @@ export async function handleClickCallback(cb: ClickCallback): Promise<Response> 
         .set({ status: "paid", rawPayload: { ...(tx.rawPayload as object ?? {}), complete: cb } })
         .where(eq(paymentTransactions.id, tx.id));
       await t.update(orders).set({ status: "paid" }).where(eq(orders.id, order.id));
+      await t.insert(outboundQueue).values([
+        { kind: "telegram_order", payload: { orderId: order.id } },
+        { kind: "crm_order", payload: { orderId: order.id } },
+      ]);
     });
+    void processQueue().catch((e) => console.error("[click] processQueue failed:", e));
 
     return {
       ...baseResponse(cb, ClickError.Success, "Success"),

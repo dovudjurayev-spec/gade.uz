@@ -1,8 +1,9 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db/client";
-import { orders, paymentTransactions } from "@/db/schema";
+import { orders, outboundQueue, paymentTransactions } from "@/db/schema";
 import { PaymeError, PaymeState } from "./errors";
 import { setStoredPaymePassword } from "./password-store";
+import { processQueue } from "@/services/queue/processor";
 
 // Payme работает в тийинах (наши единицы совпадают)
 type Account = { order_id?: string };
@@ -149,7 +150,12 @@ async function performTransaction(params: RpcParams): Promise<RpcResult> {
       .update(orders)
       .set({ status: "paid" })
       .where(eq(orders.id, tx.orderId));
+    await t.insert(outboundQueue).values([
+      { kind: "telegram_order", payload: { orderId: tx.orderId } },
+      { kind: "crm_order", payload: { orderId: tx.orderId } },
+    ]);
   });
+  void processQueue().catch((e) => console.error("[payme] processQueue failed:", e));
 
   return {
     result: {

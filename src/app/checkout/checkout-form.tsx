@@ -55,6 +55,12 @@ export function CheckoutForm({
   const coordsLat = coords?.lat;
   const coordsLng = coords?.lng;
   useEffect(() => {
+    if (delivery !== "pickup" && payment === "card_on_delivery") {
+      setPayment("payme");
+    }
+  }, [delivery, payment]);
+
+  useEffect(() => {
     if (delivery !== "courier_tashkent" || coordsLat == null || coordsLng == null) {
       setQuote(null);
       setQuoteError(null);
@@ -336,17 +342,19 @@ export function CheckoutForm({
               checked={payment === "click"}
               onSelect={() => setPayment("click")}
             />
-            <OptionTile
-              icon={CreditCard}
-              title="Картой при самовывозе"
-              subtitle="Оплата на складе"
-              checked={payment === "card_on_delivery"}
-              onSelect={() => setPayment("card_on_delivery")}
-            />
+            {delivery === "pickup" && (
+              <OptionTile
+                icon={CreditCard}
+                title="Картой при самовывозе"
+                subtitle="Оплата на складе"
+                checked={payment === "card_on_delivery"}
+                onSelect={() => setPayment("card_on_delivery")}
+              />
+            )}
             <OptionTile
               icon={Banknote}
               title="Наличными"
-              subtitle="При получении"
+              subtitle={delivery === "pickup" ? "На складе при получении" : "Курьеру при получении"}
               checked={payment === "cash_on_delivery"}
               onSelect={() => setPayment("cash_on_delivery")}
             />

@@ -188,11 +188,15 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
         .where(eq(products.id, i.productId));
     }
 
-    // enqueue Telegram + CRM jobs (site never blocks on external systems)
-    await tx.insert(outboundQueue).values([
-      { kind: "telegram_order", payload: { orderId } },
-      { kind: "crm_order", payload: { orderId } },
-    ]);
+    // enqueue Telegram + CRM jobs (site never blocks on external systems).
+    // Для онлайн-оплаты уведомления отложены до подтверждения платежа —
+    // их поставит в очередь вебхук провайдера при переводе заказа в "paid".
+    if (initialStatus === "confirmed") {
+      await tx.insert(outboundQueue).values([
+        { kind: "telegram_order", payload: { orderId } },
+        { kind: "crm_order", payload: { orderId } },
+      ]);
+    }
 
     return { orderId, number };
   });
