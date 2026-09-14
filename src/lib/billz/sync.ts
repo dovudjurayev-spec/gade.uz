@@ -177,7 +177,7 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
   const sku = (rawSku ? `${rawSku}-${billzShort}` : billzShort).slice(0, 64);
 
   const existing = await db
-    .select({ id: products.id, categoryId: products.categoryId, brandLineId: products.brandLineId })
+    .select({ id: products.id, categoryId: products.categoryId, brandLineId: products.brandLineId, description: products.description, imagesManualOverride: products.imagesManualOverride })
     .from(products)
     .where(eq(products.billzId, p.id))
     .limit(1);
@@ -204,6 +204,14 @@ async function upsertProduct(p: BillzProduct, shopId: string, result: SyncResult
     // UPDATE: категория/бренд обновляются ТОЛЬКО если Billz прислал непустое значение.
     // Иначе — оставляем то, что стоит в БД (это может быть ручная привязка админа).
     const patch: Record<string, unknown> = { ...baseValues };
+    // Описание: если в БД уже есть непустое описание (ручная правка) — не затираем.
+    if (existing[0].description && existing[0].description.trim().length > 0) {
+      delete patch.description;
+    }
+    // Фото: если админ пометил ручной override — не затираем.
+    if (existing[0].imagesManualOverride) {
+      delete patch.images;
+    }
     if (categoryId != null) {
       patch.categoryId = categoryId;
       if (existing[0].categoryId == null) result.categoryAssigned += 1;

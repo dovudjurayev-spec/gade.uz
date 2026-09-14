@@ -39,6 +39,7 @@ export async function updateProductAction(input: UpdateInput) {
       hairType: input.hairType || null,
       skinType: input.skinType || null,
       images: input.images,
+      imagesManualOverride: true,
       imageFit: input.imageFit === "cover" ? "cover" : "contain",
       isFeatured: input.isFeatured,
       isNew: input.isNew,

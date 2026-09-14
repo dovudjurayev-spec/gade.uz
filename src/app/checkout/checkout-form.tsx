@@ -251,64 +251,70 @@ export function CheckoutForm({
         </Field>
 
         {delivery === "courier_tashkent" && (
-          <>
-            <Field label="Адрес">
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-3">
+              Адрес доставки
+            </div>
+            <div className="border border-neutral-200 bg-white">
               <AddressPicker
                 value={address}
                 onChange={setAddress}
                 options={savedAddresses}
               />
-            </Field>
-            <div className="space-y-3">
-              <div
-                className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border p-4 transition-colors ${
-                  coords
-                    ? "border-neutral-200 bg-white"
-                    : "border-neutral-300 bg-neutral-50"
-                }`}
-              >
-                <div className="shrink-0 h-10 w-10 grid place-items-center rounded-full bg-neutral-900 text-white">
-                  <MapPin className="h-5 w-5" strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium text-neutral-900">
-                    {coords ? "Точка на карте отмечена" : "Отметьте точку на карте"}
-                  </div>
-                  <div className="text-xs text-neutral-600 mt-0.5 leading-relaxed">
-                    {coords
-                      ? "Стоимость доставки рассчитана точно по координатам."
-                      : "Так мы точно рассчитаем стоимость доставки до вашего дома."}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowMap((v) => !v)}
-                  className={`shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 text-xs uppercase tracking-widest transition-colors cursor-pointer ${
-                    coords
-                      ? "border border-neutral-300 hover:border-neutral-900 bg-white"
-                      : "bg-neutral-900 hover:bg-black text-white"
+              <div className="border-t border-neutral-200">
+                <div
+                  className={`flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-5 transition-colors ${
+                    coords ? "bg-white" : "bg-neutral-50"
                   }`}
                 >
-                  {showMap ? "Скрыть" : coords ? "Изменить" : "Открыть карту"}
-                </button>
-              </div>
-              {showMap && (
-                <div>
-                  <DeliveryMap value={coords} onChange={setCoords} />
+                  <div className="shrink-0 h-10 w-10 grid place-items-center rounded-md bg-neutral-900 text-white">
+                    <MapPin className="h-5 w-5" strokeWidth={1.5} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-neutral-900">
+                      {coords ? "Точка на карте отмечена" : "Отметьте точку на карте"}
+                    </div>
+                    <div className="text-xs text-neutral-600 mt-0.5 leading-relaxed">
+                      {coords
+                        ? "Стоимость доставки рассчитана точно по координатам."
+                        : "Так мы точно рассчитаем стоимость доставки до вашего дома."}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMap((v) => !v)}
+                    className={`shrink-0 inline-flex items-center justify-center gap-2 h-11 px-5 text-xs uppercase tracking-widest transition-colors cursor-pointer ${
+                      coords
+                        ? "border border-neutral-300 hover:border-neutral-900 bg-white"
+                        : "bg-neutral-900 hover:bg-black text-white"
+                    }`}
+                  >
+                    {showMap ? "Скрыть" : coords ? "Изменить" : "Открыть карту"}
+                  </button>
                 </div>
-              )}
+                {showMap && (
+                  <div className="border-t border-neutral-100">
+                    <DeliveryMap value={coords} onChange={setCoords} />
+                  </div>
+                )}
+              </div>
             </div>
-          </>
+          </div>
         )}
 
         {delivery === "region_shipping" && (
-          <Field label="Адрес">
-            <AddressPicker
-              value={address}
-              onChange={setAddress}
-              options={savedAddresses}
-            />
-          </Field>
+          <div>
+            <div className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-3">
+              Адрес доставки
+            </div>
+            <div className="border border-neutral-200 bg-white">
+              <AddressPicker
+                value={address}
+                onChange={setAddress}
+                options={savedAddresses}
+              />
+            </div>
+          </div>
         )}
         </>)}
 
@@ -675,12 +681,12 @@ function AddressPicker({
   }, [mode, savedMatch]);
 
   if (options.length === 0) {
-    return <AddressComposer value={value} onChange={onChange} />;
+    return <AddressComposer value={value} onChange={onChange} bare />;
   }
 
   return (
-    <div className="space-y-2">
-      <div className="grid gap-2 sm:grid-cols-2">
+    <div>
+      <div className="p-4 grid gap-2 sm:grid-cols-2">
         {options.map((opt) => {
           const active = mode === "saved" && opt.value === value;
           return (
@@ -699,7 +705,7 @@ function AddressPicker({
             >
               <div className="flex items-start gap-3">
                 <div
-                  className={`shrink-0 h-9 w-9 grid place-items-center rounded-full transition-colors ${
+                  className={`shrink-0 h-9 w-9 grid place-items-center rounded-md transition-colors ${
                     active ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
                   }`}
                 >
@@ -740,7 +746,7 @@ function AddressPicker({
         >
           <div className="flex items-center gap-3">
             <div
-              className={`shrink-0 h-9 w-9 grid place-items-center rounded-full transition-colors ${
+              className={`shrink-0 h-9 w-9 grid place-items-center rounded-md transition-colors ${
                 mode === "custom" ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-700"
               }`}
             >
@@ -755,15 +761,15 @@ function AddressPicker({
       </div>
 
       {mode === "custom" && (
-        <div className="pt-2">
-          <AddressComposer value={value} onChange={onChange} autoFocusRef={inputRef} />
+        <div className="border-t border-neutral-100">
+          <AddressComposer value={value} onChange={onChange} autoFocusRef={inputRef} bare />
         </div>
       )}
 
-      <div className="flex justify-end pt-1">
+      <div className="flex justify-end px-4 pb-3">
         <Link
           href="/account/addresses"
-          className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors"
+          className="text-[11px] uppercase tracking-widest text-neutral-500 hover:text-neutral-900 transition-colors"
         >
           Управлять адресами →
         </Link>
@@ -795,10 +801,12 @@ function AddressComposer({
   value,
   onChange,
   autoFocusRef,
+  bare,
 }: {
   value: string;
   onChange: (v: string) => void;
   autoFocusRef?: React.RefObject<HTMLInputElement | null>;
+  bare?: boolean;
 }) {
   const initial = parseAddress(value);
   const [city, setCity] = useState(initial.city);
@@ -815,8 +823,8 @@ function AddressComposer({
     onChange(joinAddress(merged));
   }
 
-  return (
-    <div className="border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+  const body = (
+    <>
       <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-neutral-100">
         <ComposerField
           icon={Building2}
@@ -845,6 +853,14 @@ function AddressComposer({
           required
         />
       </div>
+    </>
+  );
+
+  if (bare) return <div>{body}</div>;
+
+  return (
+    <div className="border border-neutral-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+      {body}
     </div>
   );
 }
@@ -868,7 +884,7 @@ function ComposerField({
 }) {
   return (
     <label className="group flex items-center gap-3 px-5 py-4 focus-within:bg-neutral-50 hover:bg-neutral-50/60 transition-colors cursor-text">
-      <div className="shrink-0 h-9 w-9 grid place-items-center rounded-full bg-neutral-100 text-neutral-500 group-focus-within:bg-neutral-900 group-focus-within:text-white transition-colors">
+      <div className="shrink-0 h-9 w-9 grid place-items-center rounded-md bg-neutral-100 text-neutral-500 group-focus-within:bg-neutral-900 group-focus-within:text-white transition-colors">
         <Icon className="h-4 w-4" strokeWidth={1.5} />
       </div>
       <div className="min-w-0 flex-1">

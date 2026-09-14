@@ -1,13 +1,14 @@
-// Стандартные коды ошибок Payme Merchant API
+// Стандартные коды ошибок Payme Merchant API.
+// message — строка (RU), т.к. sandbox Payme ожидает string, а не локализованный объект.
 export const PaymeError = {
-  InvalidAmount: { code: -31001, message: { ru: "Неверная сумма", uz: "Notoʻgʻri summa", en: "Invalid amount" } },
-  TransactionNotFound: { code: -31003, message: { ru: "Транзакция не найдена", uz: "Tranzaksiya topilmadi", en: "Transaction not found" } },
-  CannotPerform: { code: -31008, message: { ru: "Невозможно выполнить операцию", uz: "Amalni bajarib boʻlmaydi", en: "Cannot perform operation" } },
-  CannotCancel: { code: -31007, message: { ru: "Невозможно отменить", uz: "Bekor qilib boʻlmaydi", en: "Cannot cancel transaction" } },
-  OrderNotFound: { code: -31050, message: { ru: "Заказ не найден", uz: "Buyurtma topilmadi", en: "Order not found" } },
-  OrderAlreadyPaid: { code: -31051, message: { ru: "Заказ уже оплачен", uz: "Buyurtma toʻlangan", en: "Order already paid" } },
-  InvalidAccount: { code: -31099, message: { ru: "Неверные параметры счёта", uz: "Notoʻgʻri hisob", en: "Invalid account" } },
-  Unauthorized: { code: -32504, message: { ru: "Ошибка авторизации", uz: "Avtorizatsiya xatosi", en: "Unauthorized" } },
+  InvalidAmount: { code: -31001, message: "Неверная сумма" },
+  TransactionNotFound: { code: -31003, message: "Транзакция не найдена" },
+  CannotPerform: { code: -31008, message: "Невозможно выполнить операцию" },
+  CannotCancel: { code: -31007, message: "Невозможно отменить" },
+  OrderNotFound: { code: -31050, message: "Заказ не найден" },
+  OrderAlreadyPaid: { code: -31051, message: "Заказ уже оплачен" },
+  InvalidAccount: { code: -31099, message: "Неверные параметры счёта" },
+  Unauthorized: { code: -32504, message: "Ошибка авторизации" },
 } as const;
 
 export type PaymeErrorCode = (typeof PaymeError)[keyof typeof PaymeError];

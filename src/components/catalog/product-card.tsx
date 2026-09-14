@@ -41,7 +41,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
             loading="lazy"
             className={cn(
               "h-full w-full group-hover:scale-105 transition-transform duration-500",
-              product.imageFit === "cover" ? "object-cover" : "object-contain p-4",
+              product.imageFit === "cover" ? "object-cover" : "object-contain object-bottom p-4",
             )}
           />
         ) : (
@@ -67,11 +67,13 @@ export function ProductCard({ product }: { product: ProductListItem }) {
           <span className="block truncate">{line1}</span>
           <span className="block truncate">{line2 || "\u00A0"}</span>
         </div>
-        <div className="text-xs text-neutral-500 mt-0.5 min-h-[1rem]">
-          {product.volume ?? ""}
-        </div>
+        {product.volume && (
+          <div className="text-xs text-neutral-500 mt-0.5">
+            {product.volume}
+          </div>
+        )}
         {product.shortDescription && (
-          <p className="text-xs text-neutral-600 mt-2 line-clamp-2 leading-relaxed min-h-[2rem]">
+          <p className="text-xs text-neutral-600 mt-1 line-clamp-2 leading-relaxed">
             {product.shortDescription}
           </p>
         )}

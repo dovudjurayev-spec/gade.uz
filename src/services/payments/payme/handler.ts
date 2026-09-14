@@ -2,6 +2,7 @@ import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders, paymentTransactions } from "@/db/schema";
 import { PaymeError, PaymeState } from "./errors";
+import { setStoredPaymePassword } from "./password-store";
 
 // Payme работает в тийинах (наши единицы совпадают)
 type Account = { order_id?: string };
@@ -250,6 +251,13 @@ async function getStatement(params: RpcParams): Promise<RpcResult> {
   return { result: { transactions } };
 }
 
+async function changePassword(params: RpcParams): Promise<RpcResult> {
+  const password = typeof params.password === "string" ? params.password : "";
+  if (!password) return err(PaymeError.Unauthorized, "password");
+  await setStoredPaymePassword(password);
+  return { result: { success: true } };
+}
+
 export async function handlePaymeRpc(req: PaymeRpcRequest): Promise<RpcResult> {
   try {
     switch (req.method) {
@@ -259,6 +267,7 @@ export async function handlePaymeRpc(req: PaymeRpcRequest): Promise<RpcResult> {
       case "CancelTransaction":       return await cancelTransaction(req.params);
       case "CheckTransaction":        return await checkTransaction(req.params);
       case "GetStatement":            return await getStatement(req.params);
+      case "ChangePassword":          return await changePassword(req.params);
       default:
         return err(PaymeError.CannotPerform, `Unknown method: ${req.method}`);
     }

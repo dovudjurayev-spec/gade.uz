@@ -64,6 +64,13 @@
       "when": 1787800000000,
       "tag": "0008_customer_address_geo",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1787900000000,
+      "tag": "0009_images_manual_override",
+      "breakpoints": true
     }
   ]
 }
