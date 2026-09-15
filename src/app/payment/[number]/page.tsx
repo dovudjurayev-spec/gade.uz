@@ -9,7 +9,6 @@ import { formatPrice } from "@/lib/money";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { signOrderNumber, verifyOrderToken } from "@/lib/order-token";
 import Link from "next/link";
-import { RedirectToPayment } from "./redirect-client";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +49,7 @@ export default async function PaymentPage({
       amountTiyin: order.totalTiyin,
       returnUrl,
     });
-    return <RedirectToPayment url={url} />;
+    redirect(url);
   }
 
   if (order.paymentMethod === "click" && env.CLICK_MERCHANT_ID && env.CLICK_SERVICE_ID) {
@@ -61,7 +60,7 @@ export default async function PaymentPage({
       orderNumber: order.number,
       returnUrl,
     });
-    return <RedirectToPayment url={url} />;
+    redirect(url);
   }
 
   // Fallback: провайдер не настроен

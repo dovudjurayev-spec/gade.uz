@@ -190,8 +190,10 @@ export function CheckoutForm({
         return;
       }
       if (result && result.ok && result.redirectUrl) {
-        // Онлайн-оплата: в браузере — location.href, в Telegram WebApp — tg.openLink.
-        clear();
+        // Онлайн-оплата: уходим на Payme в том же окне (в TMA это оставляет
+        // мини-апп на нашем домене, и после оплаты Payme редиректит на success
+        // прямо внутри мини-аппа). Корзину чистит success page — если юзер
+        // отменит оплату, товары останутся.
         openExternalUrl(result.redirectUrl);
         return;
       }

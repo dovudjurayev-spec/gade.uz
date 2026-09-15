@@ -1,14 +1,10 @@
-// В Telegram WebApp обычный переход window.location.href на внешний домен
-// работает, но пользователь «застревает» на payme.uz без нативной кнопки назад
-// в мини-апп. Правильный путь — Telegram.WebApp.openLink(), тогда Payme
-// откроется поверх мини-аппа со штатным UI Телеграма.
+// В Telegram WebApp мы намеренно используем window.location.href, а не
+// tg.openLink(): openLink открывает URL в ОТДЕЛЬНОМ in-app браузере поверх
+// мини-аппа, и Payme-редирект после оплаты уходит туда же, оставляя
+// мини-апп на пустой /checkout странице. С window.location.href весь WebView
+// мини-аппа переходит на Payme и после успешной оплаты возвращается на
+// success page уже внутри мини-аппа.
 export function openExternalUrl(url: string): void {
   if (typeof window === "undefined") return;
-  const tg = (window as unknown as { Telegram?: { WebApp?: { openLink?: (u: string) => void } } })
-    .Telegram?.WebApp;
-  if (tg?.openLink) {
-    tg.openLink(url);
-    return;
-  }
   window.location.href = url;
 }
