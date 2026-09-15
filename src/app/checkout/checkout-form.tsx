@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/money";
 import { submitOrderAction } from "./actions";
 import DeliveryMap from "@/components/DeliveryMap";
 import type { DeliveryTariff } from "@/lib/delivery";
+import { openExternalUrl } from "@/lib/telegram-open-link";
 
 type SavedAddress = { id: number; label: string; value: string; isDefault: boolean };
 
@@ -189,9 +190,9 @@ export function CheckoutForm({
         return;
       }
       if (result && result.ok && result.redirectUrl) {
-        // Онлайн-оплата: полноценный переход браузера на внешний URL Payme.
+        // Онлайн-оплата: в браузере — location.href, в Telegram WebApp — tg.openLink.
         clear();
-        window.location.href = result.redirectUrl;
+        openExternalUrl(result.redirectUrl);
         return;
       }
       // Оффлайн-оплата: redirect() уже сработал в Server Action.
