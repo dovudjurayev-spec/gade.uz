@@ -114,7 +114,7 @@ async function main() {
     .where(isNull(products.deletedAt));
 
   const changes = new Map<string, { ids: number[]; label: string }>();
-  const unclassified: { id: number; name: string; oldIkpu: string }[] = [];
+  const unclassified: { id: number; name: string; oldIkpu: string | null }[] = [];
   const untouched: { id: number; name: string }[] = [];
 
   for (const p of rows) {
