@@ -5,6 +5,7 @@ import "./globals.css";
 import { SiteChrome } from "@/components/layout/site-chrome";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { StartParamHandler } from "@/components/tma/start-param-handler";
 
 const sans = Manrope({
   subsets: ["latin", "cyrillic"],
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru" className={`${sans.variable} ${serif.variable}`}>
       <body className="min-h-screen flex flex-col font-sans">
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
+        <StartParamHandler />
         <SiteChrome header={<SiteHeader />} footer={<SiteFooter />}>
           {children}
         </SiteChrome>
