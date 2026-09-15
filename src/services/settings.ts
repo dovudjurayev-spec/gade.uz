@@ -20,7 +20,7 @@ const DEFAULTS: SiteSettings = {
   courierBaseSum: 20_000,
   courierPerKmSum: 3_000,
   regionCostSum: 45_000,
-  freeDeliveryThresholdSum: 500_000,
+  freeDeliveryThresholdSum: 1_000_000,
   phone: "+998 90 167 50 04",
   telegramUrl: "https://t.me/gadeuz",
   address: "Мирабадский пр. 64В, Ташкент",

@@ -9,6 +9,7 @@ import { formatPrice } from "@/lib/money";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { signOrderNumber, verifyOrderToken } from "@/lib/order-token";
 import Link from "next/link";
+import { RedirectToPayment } from "./redirect-client";
 
 export const dynamic = "force-dynamic";
 
@@ -35,8 +36,16 @@ export default async function PaymentPage({
   // Токен подписи вставляем всегда, даже владельцу: возврат из Payme может
   // происходить в отдельном in-app браузере Telegram (при tg.openLink) или
   // из внешнего браузера, где кука customerAuth недоступна.
-  const successToken = `?t=${encodeURIComponent(signOrderNumber(order.number))}`;
-  const returnUrl = `${env.APP_URL}/checkout/success/${order.number}${successToken}`;
+  const orderToken = signOrderNumber(order.number);
+  const successToken = `?t=${encodeURIComponent(orderToken)}`;
+  // Если настроен deep-link мини-аппа — возврат после оплаты уводит юзера обратно
+  // в мини-апп через t.me/<bot>/<app>?startapp=..., иначе на веб success page.
+  const returnUrl =
+    env.TELEGRAM_TMA_BOT_USERNAME && env.TELEGRAM_TMA_APP_SHORT_NAME
+      ? `https://t.me/${env.TELEGRAM_TMA_BOT_USERNAME}/${env.TELEGRAM_TMA_APP_SHORT_NAME}?startapp=${encodeURIComponent(
+          `paid_${order.number}_${orderToken}`,
+        )}`
+      : `${env.APP_URL}/checkout/success/${order.number}${successToken}`;
 
   if (order.status === "paid") {
     redirect(`/checkout/success/${order.number}${successToken}`);
@@ -49,7 +58,7 @@ export default async function PaymentPage({
       amountTiyin: order.totalTiyin,
       returnUrl,
     });
-    redirect(url);
+    return <RedirectToPayment url={url} />;
   }
 
   if (order.paymentMethod === "click" && env.CLICK_MERCHANT_ID && env.CLICK_SERVICE_ID) {
@@ -60,7 +69,7 @@ export default async function PaymentPage({
       orderNumber: order.number,
       returnUrl,
     });
-    redirect(url);
+    return <RedirectToPayment url={url} />;
   }
 
   // Fallback: провайдер не настроен

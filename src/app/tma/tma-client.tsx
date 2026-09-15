@@ -7,7 +7,10 @@ type TelegramWebApp = {
   ready: () => void;
   expand: () => void;
   colorScheme: "light" | "dark";
-  initDataUnsafe?: { user?: { first_name?: string; username?: string } };
+  initDataUnsafe?: {
+    user?: { first_name?: string; username?: string };
+    start_param?: string;
+  };
 };
 
 declare global {
@@ -71,8 +74,14 @@ export function TmaClient() {
         }
         const name = tg.initDataUnsafe?.user?.first_name || tg.initDataUnsafe?.user?.username || "друг";
         setState({ kind: "ok", name });
+        // Возврат из Payme после оплаты: startapp=paid_<number>_<token>
+        const startParam = tg.initDataUnsafe?.start_param ?? "";
+        const paidMatch = /^paid_([A-Za-z0-9-]+)_([A-Za-z0-9_-]+)$/.exec(startParam);
+        const target = paidMatch
+          ? `/checkout/success/${paidMatch[1]}?t=${encodeURIComponent(paidMatch[2] ?? "")}`
+          : "/";
         setTimeout(() => {
-          window.location.replace("/");
+          window.location.replace(target);
         }, 600);
       } catch (err) {
         setState({ kind: "error", msg: `Сеть недоступна: ${(err as Error).message}` });

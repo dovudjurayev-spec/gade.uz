@@ -17,6 +17,11 @@ const envSchema = z.object({
   // Токен бота, обслуживающего Telegram Mini App (валидация initData).
   // Отдельно от TELEGRAM_BOT_TOKEN, который используется для админ-уведомлений о заказах.
   TELEGRAM_TMA_BOT_TOKEN: z.string().optional(),
+  // Для deep-link возврата после оплаты Payme обратно в мини-апп.
+  // BOT_USERNAME без @ (например: gadecosmeticsbot).
+  // APP_SHORT_NAME — short_name мини-аппа из BotFather /newapp (например: shop).
+  TELEGRAM_TMA_BOT_USERNAME: z.string().optional(),
+  TELEGRAM_TMA_APP_SHORT_NAME: z.string().optional(),
 
   ORDER_TOKEN_SECRET: z.string().min(32).optional(),
 
