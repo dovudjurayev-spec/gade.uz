@@ -8,7 +8,7 @@ import { buildPaymeCheckoutUrl } from "@/services/payments/payme/checkout-url";
 
 export type SubmitOrderResult =
   | { ok: false; error: string }
-  | { ok: true; redirectUrl: string };
+  | { ok: true; redirectUrl: string; orderNumber: string; orderToken: string };
 
 export async function submitOrderAction(input: CreateOrderInput): Promise<SubmitOrderResult | void> {
   const result = await createOrder(input);
@@ -33,7 +33,7 @@ export async function submitOrderAction(input: CreateOrderInput): Promise<Submit
       amountTiyin: result.totalTiyin,
       returnUrl,
     });
-    return { ok: true, redirectUrl: url };
+    return { ok: true, redirectUrl: url, orderNumber: result.orderNumber, orderToken: token };
   }
 
   redirect(`/checkout/success/${result.orderNumber}${suffix}`);

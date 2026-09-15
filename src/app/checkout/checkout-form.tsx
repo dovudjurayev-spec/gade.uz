@@ -45,6 +45,40 @@ export function CheckoutForm({
   const [showMap, setShowMap] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [waitingPayment, setWaitingPayment] = useState<{ number: string; token: string } | null>(null);
+
+  // Пока юзер оплачивает Payme (в приложении или во внешнем браузере),
+  // мини-апп остаётся на этой странице. Пуллим статус заказа каждые 3 сек
+  // до 15 минут; как только Payme колбэком пометит его paid — уводим на success.
+  useEffect(() => {
+    if (!waitingPayment) return;
+    const { number, token } = waitingPayment;
+    const started = Date.now();
+    const TIMEOUT_MS = 15 * 60 * 1000;
+    const tick = async () => {
+      try {
+        const res = await fetch(
+          `/api/orders/${encodeURIComponent(number)}/status?t=${encodeURIComponent(token)}`,
+          { cache: "no-store" },
+        );
+        const data = (await res.json().catch(() => ({}))) as { status?: string };
+        if (data.status === "paid") {
+          clearInterval(id);
+          router.replace(`/checkout/success/${number}?t=${encodeURIComponent(token)}`);
+          return;
+        }
+      } catch {
+        // сеть может моргнуть — просто ждём следующего тика
+      }
+      if (Date.now() - started > TIMEOUT_MS) {
+        clearInterval(id);
+        setWaitingPayment(null);
+      }
+    };
+    const id = setInterval(tick, 3000);
+    tick();
+    return () => clearInterval(id);
+  }, [waitingPayment, router]);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
 
@@ -190,10 +224,12 @@ export function CheckoutForm({
         return;
       }
       if (result && result.ok && result.redirectUrl) {
-        // Онлайн-оплата: уходим на Payme в том же окне (в TMA это оставляет
-        // мини-апп на нашем домене, и после оплаты Payme редиректит на success
-        // прямо внутри мини-аппа). Корзину чистит success page — если юзер
-        // отменит оплату, товары останутся.
+        // Онлайн-оплата: открываем Payme (в TMA — через tg.openLink, чтобы
+        // universal link на приложение Payme подхватился). Мини-апп остаётся
+        // на этой странице и пуллит статус заказа, чтобы после оплаты уйти
+        // на success — не полагаясь на callback deep-link (может не сработать,
+        // если юзер оплатил внутри Payme-приложения и просто закрыл его).
+        setWaitingPayment({ number: result.orderNumber, token: result.orderToken });
         openExternalUrl(result.redirectUrl);
         return;
       }
@@ -216,6 +252,24 @@ export function CheckoutForm({
         }
       }}
     >
+      {waitingPayment && (
+        <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur grid place-items-center px-6 text-center">
+          <div>
+            <div className="text-5xl mb-4">⏳</div>
+            <h2 className="text-xl mb-2">Ожидаем оплату</h2>
+            <p className="text-sm text-neutral-600 max-w-sm">
+              Не закрывайте страницу. Как только оплата пройдёт — мы автоматически покажем подтверждение заказа.
+            </p>
+            <button
+              type="button"
+              onClick={() => setWaitingPayment(null)}
+              className="mt-6 text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900"
+            >
+              Отменить ожидание
+            </button>
+          </div>
+        </div>
+      )}
       <StepIndicator step={step} onStepClick={(s) => { if (s < step) { setStep(s); setError(null); } }} />
 
       <div className="grid md:grid-cols-[1fr_360px] gap-8 mt-10">
