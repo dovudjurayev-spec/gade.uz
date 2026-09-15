@@ -6,9 +6,9 @@ import Image from "next/image";
 type Slide = { src: string | null; alt: string };
 
 const SLIDES: Slide[] = [
-  { src: null, alt: "Композиция GA-DE #1" },
-  { src: null, alt: "Композиция GA-DE #2" },
-  { src: null, alt: "Композиция GA-DE #3" },
+  { src: "/brand/slide-1.png", alt: "GA-DE — блеск для губ" },
+  { src: "/brand/slide-2.png", alt: "GA-DE — карандаш High Precision" },
+  { src: "/brand/slide-3.png", alt: "GA-DE Skinfinity — сыворотка" },
 ];
 
 const INTERVAL_MS = 5000;
