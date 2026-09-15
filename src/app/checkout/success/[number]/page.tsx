@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders } from "@/db/schema";
@@ -37,18 +37,15 @@ export default async function SuccessPage({
 
   const requiresOnlinePayment =
     order.paymentMethod === "payme" || order.paymentMethod === "click";
-
-  // Пока онлайн-заказ не оплачен — не показываем "Спасибо",
-  // отправляем пользователя на страницу оплаты.
-  if (requiresOnlinePayment && order.status === "pending_payment") {
-    redirect(`/payment/${order.number}${tokenSuffix}`);
-  }
+  const awaitingPayment = requiresOnlinePayment && order.status === "pending_payment";
 
   return (
     <div className="mx-auto max-w-2xl px-4 md:px-8 py-16 text-center">
-      <ClearCart />
-      <div className="text-6xl mb-4">✓</div>
-      <h1 className="text-3xl md:text-4xl mb-3">Спасибо за заказ!</h1>
+      {!awaitingPayment && <ClearCart />}
+      <div className="text-6xl mb-4">{awaitingPayment ? "⏳" : "✓"}</div>
+      <h1 className="text-3xl md:text-4xl mb-3">
+        {awaitingPayment ? "Оплата не завершена" : "Спасибо за заказ!"}
+      </h1>
       <p className="text-neutral-600 mb-8">
         Номер вашего заказа: <span className="font-semibold">№{order.number}</span>
       </p>
@@ -70,15 +67,15 @@ export default async function SuccessPage({
         />
       </div>
 
-      {requiresOnlinePayment && (
+      {awaitingPayment && (
         <div className="border-2 border-brand-accent p-4 mb-8 text-sm">
-          Заказ создан. Перейдите к оплате — после подтверждения мы начнём его собирать.
+          Оплата не прошла или была отменена. Заказ №{order.number} сохранён — можно попробовать ещё раз.
           <div className="mt-3">
             <Link
               href={`/payment/${order.number}${tokenSuffix}`}
               className="inline-block bg-brand text-white px-6 py-3 uppercase tracking-widest text-xs hover:bg-brand-accent"
             >
-              Оплатить
+              Оплатить снова
             </Link>
           </div>
         </div>
