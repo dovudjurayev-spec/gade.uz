@@ -33,7 +33,10 @@ export default async function PaymentPage({
   if (!isOwner && !verifyOrderToken(order.number, t ?? null)) {
     notFound();
   }
-  const successToken = isOwner ? "" : `?t=${encodeURIComponent(signOrderNumber(order.number))}`;
+  // Токен подписи вставляем всегда, даже владельцу: возврат из Payme может
+  // происходить в отдельном in-app браузере Telegram (при tg.openLink) или
+  // из внешнего браузера, где кука customerAuth недоступна.
+  const successToken = `?t=${encodeURIComponent(signOrderNumber(order.number))}`;
   const returnUrl = `${env.APP_URL}/checkout/success/${order.number}${successToken}`;
 
   if (order.status === "paid") {
