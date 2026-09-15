@@ -107,7 +107,9 @@ export async function createOrder(input: CreateOrderInput): Promise<CreateOrderR
     deliveryDistanceKm = routeDistanceKm(dest);
     deliveryCost = calculateCourierPriceTiyin(deliveryDistanceKm, subtotal, tariff);
   } else if (data.deliveryMethod === "region_shipping") {
-    deliveryCost = tariff.regionTiyin;
+    // Стоимость по регионам считает менеджер вручную и уточняет с клиентом,
+    // поэтому в заказе оставляем 0 и не блокируем оплату товара.
+    deliveryCost = 0;
   }
 
   const total = subtotal + deliveryCost;

@@ -132,9 +132,9 @@ export function CheckoutForm({
   let deliveryCost = 0;
   if (delivery === "courier_tashkent") {
     deliveryCost = subtotal >= FREE_THRESHOLD ? 0 : quote?.priceTiyin ?? 0;
-  } else if (delivery === "region_shipping") {
-    deliveryCost = REGION_DELIVERY;
   }
+  // region_shipping: стоимость доставки считает менеджер после заказа —
+  // в итоговую сумму не включаем, показываем плашку в шаге "Оплата".
   const total = subtotal + deliveryCost;
 
   if (items.length === 0) {
@@ -312,7 +312,7 @@ export function CheckoutForm({
             <OptionTile
               icon={Package}
               title="В регион"
-              subtitle="По тарифам почты BTS"
+              subtitle="Стоимость уточнит менеджер"
               checked={delivery === "region_shipping"}
               onSelect={() => setDelivery("region_shipping")}
             />
@@ -390,6 +390,9 @@ export function CheckoutForm({
                 options={savedAddresses}
               />
             </div>
+            <p className="mt-3 text-xs text-neutral-500 leading-relaxed">
+              Стоимость доставки в регионы зависит от адреса. После оформления менеджер свяжется с вами и уточнит тариф.
+            </p>
           </div>
         )}
         </>)}
@@ -1019,6 +1022,9 @@ function DeliveryRow({
     );
   } else if (quoteError) {
     value = "—";
+    valueClass = "text-neutral-500";
+  } else if (delivery === "region_shipping") {
+    value = "уточнит менеджер";
     valueClass = "text-neutral-500";
   } else if (deliveryCost === 0) {
     value = "Бесплатно";
