@@ -19,7 +19,14 @@ export async function submitOrderAction(input: CreateOrderInput): Promise<Submit
   const suffix = token ? `?t=${token}` : "";
 
   if (input.paymentMethod === "payme" && env.PAYME_MERCHANT_ID) {
-    const returnUrl = `${env.APP_URL}/checkout/success/${result.orderNumber}${suffix}`;
+    // Если сконфигурирован deep-link мини-аппа — Payme после оплаты возвращает
+    // юзера в мини-апп через t.me/<bot>/<app>?startapp=paid_..., иначе на веб.
+    const returnUrl =
+      env.TELEGRAM_TMA_BOT_USERNAME && env.TELEGRAM_TMA_APP_SHORT_NAME
+        ? `https://t.me/${env.TELEGRAM_TMA_BOT_USERNAME}/${env.TELEGRAM_TMA_APP_SHORT_NAME}?startapp=${encodeURIComponent(
+            `paid_${result.orderNumber}_${token}`,
+          )}`
+        : `${env.APP_URL}/checkout/success/${result.orderNumber}${suffix}`;
     const url = buildPaymeCheckoutUrl({
       merchantId: env.PAYME_MERCHANT_ID,
       orderId: result.orderId,

@@ -1,10 +1,20 @@
-// В Telegram WebApp мы намеренно используем window.location.href, а не
-// tg.openLink(): openLink открывает URL в ОТДЕЛЬНОМ in-app браузере поверх
-// мини-аппа, и Payme-редирект после оплаты уходит туда же, оставляя
-// мини-апп на пустой /checkout странице. С window.location.href весь WebView
-// мини-аппа переходит на Payme и после успешной оплаты возвращается на
-// success page уже внутри мини-аппа.
+type Tg = {
+  ready?: () => void;
+  openLink?: (url: string, options?: { try_instant_view?: boolean }) => void;
+};
+
+// Открывает внешний URL из мини-аппа. Внутри Telegram зовём tg.openLink —
+// он открывает страницу в системном браузере / in-app SFSafariViewController,
+// где universal link «Открыть в приложении Payme» подхватывается iOS/Android.
+// Вне Telegram — обычная навигация.
 export function openExternalUrl(url: string): void {
   if (typeof window === "undefined") return;
+  const w = window as unknown as { Telegram?: { WebApp?: Tg } };
+  const tg = w.Telegram?.WebApp;
+  if (tg?.openLink) {
+    tg.ready?.();
+    tg.openLink(url);
+    return;
+  }
   window.location.href = url;
 }
