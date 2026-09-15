@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { listCategories, getFeaturedProducts, listProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
+import { BrandGallery } from "@/components/home/brand-gallery";
 
 const CATEGORY_TILE_IMAGES: Record<string, string> = {
   makiyazh: "/categories/makiyazh.png",
@@ -163,30 +164,33 @@ export default async function HomePage() {
       {/* Brand storytelling */}
       <section className="border-t border-neutral-100 bg-neutral-50/50">
         <div className="mx-auto max-w-7xl px-4 md:px-8 py-16 md:py-24">
-          <div className="max-w-2xl">
-          <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
-            <span className="h-px w-6 bg-neutral-400" />
-            О бренде
-          </span>
-          <h2 className="mt-3 text-3xl md:text-4xl font-light tracking-tight text-neutral-900 leading-tight">
-            GA-DE — красота,<br />созданная для вас
-          </h2>
-          <p className="mt-5 text-base md:text-lg text-neutral-600 leading-relaxed">
-            Бренд декоративной косметики, который помогает подчеркнуть естественную красоту и создать безупречный образ на каждый день и для особых случаев.
-          </p>
-          <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-            В коллекции GA-DE собраны средства для макияжа лица, глаз и губ, включая тональные основы, пудры, румяна, тени, туши, помады и другие продукты, которые легко сочетать между собой.
-          </p>
-          <p className="mt-4 text-base text-neutral-600 leading-relaxed">
-            GA-DE — ваш ежедневный ритуал красоты, вдохновения и уверенности.
-          </p>
-          <Link
-            href="/about"
-            className="group mt-8 inline-flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 transition-colors border-b border-neutral-900 hover:border-neutral-600 pb-0.5 w-fit"
-          >
-            Больше о бренде
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
-          </Link>
+          <div className="grid gap-10 md:grid-cols-2 md:items-center md:gap-16">
+            <div className="max-w-xl">
+              <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-neutral-500">
+                <span className="h-px w-6 bg-neutral-400" />
+                О бренде
+              </span>
+              <h2 className="mt-3 text-3xl md:text-4xl font-light tracking-tight text-neutral-900 leading-tight">
+                GA-DE — красота,<br />созданная для вас
+              </h2>
+              <p className="mt-5 text-base md:text-lg text-neutral-600 leading-relaxed">
+                Бренд декоративной косметики, который помогает подчеркнуть естественную красоту и создать безупречный образ на каждый день и для особых случаев.
+              </p>
+              <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+                В коллекции GA-DE собраны средства для макияжа лица, глаз и губ, включая тональные основы, пудры, румяна, тени, туши, помады и другие продукты, которые легко сочетать между собой.
+              </p>
+              <p className="mt-4 text-base text-neutral-600 leading-relaxed">
+                GA-DE — ваш ежедневный ритуал красоты, вдохновения и уверенности.
+              </p>
+              <Link
+                href="/about"
+                className="group mt-8 inline-flex items-center gap-2 text-sm text-neutral-900 hover:text-neutral-600 transition-colors border-b border-neutral-900 hover:border-neutral-600 pb-0.5 w-fit"
+              >
+                Больше о бренде
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" strokeWidth={1.5} />
+              </Link>
+            </div>
+            <BrandGallery />
           </div>
         </div>
       </section>

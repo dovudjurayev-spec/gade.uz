@@ -1,6 +1,6 @@
 import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db/client";
-import { orders, outboundQueue, paymentTransactions } from "@/db/schema";
+import { orderItems, orders, outboundQueue, paymentTransactions, products } from "@/db/schema";
 import { PaymeError, PaymeState } from "./errors";
 import { setStoredPaymePassword } from "./password-store";
 import { processQueue } from "@/services/queue/processor";
@@ -40,6 +40,33 @@ async function findTx(providerTxId: string) {
 
 // --- Methods ---
 
+async function buildFiscalDetail(orderId: number) {
+  const items = await db
+    .select({
+      productName: orderItems.productName,
+      quantity: orderItems.quantity,
+      priceTiyin: orderItems.priceTiyin,
+      ikpu: products.ikpu,
+      packageCode: products.packageCode,
+      vatPercent: products.vatPercent,
+    })
+    .from(orderItems)
+    .leftJoin(products, eq(orderItems.productId, products.id))
+    .where(eq(orderItems.orderId, orderId));
+
+  return {
+    receipt_type: 0,
+    items: items.map((it) => ({
+      title: it.productName,
+      price: it.priceTiyin,
+      count: it.quantity,
+      code: it.ikpu ?? "",
+      package_code: it.packageCode ?? "",
+      vat_percent: it.vatPercent ?? 0,
+    })),
+  };
+}
+
 async function checkPerformTransaction(params: RpcParams): Promise<RpcResult> {
   const account = (params.account ?? {}) as Account;
   const amount = Number(params.amount);
@@ -49,7 +76,8 @@ async function checkPerformTransaction(params: RpcParams): Promise<RpcResult> {
   if (order.status === "paid" || order.status === "delivered" || order.status === "shipped") {
     return err(PaymeError.OrderAlreadyPaid);
   }
-  return { result: { allow: true } };
+  const detail = await buildFiscalDetail(order.id);
+  return { result: { allow: true, detail } };
 }
 
 async function createTransaction(params: RpcParams): Promise<RpcResult> {
