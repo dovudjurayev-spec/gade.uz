@@ -9,16 +9,32 @@ type Tg = {
 
 export function RedirectToPayment({ url }: { url: string }) {
   useEffect(() => {
-    const tg = (window as unknown as { Telegram?: { WebApp?: Tg } }).Telegram?.WebApp;
-    if (tg?.openLink) {
-      // Открываем чекаут Payme в системном браузере — universal link «Открыть в
-      // приложении» подхватится iOS/Android. Возврат в мини-апп идёт через
-      // callback URL (t.me deep-link) в самой ссылке.
-      tg.ready?.();
-      tg.openLink(url);
-      return;
-    }
-    window.location.href = url;
+    let cancelled = false;
+    let tries = 0;
+    const run = async () => {
+      // telegram-web-app.js грузится afterInteractive — подождём, чтобы не
+      // упасть в fallback window.location.href, который навигирует сам WebView
+      // мини-аппа и оставляет юзера без «Открыть в приложении».
+      while (
+        !(window as unknown as { Telegram?: { WebApp?: Tg } }).Telegram?.WebApp &&
+        tries < 30
+      ) {
+        await new Promise((r) => setTimeout(r, 100));
+        tries += 1;
+      }
+      if (cancelled) return;
+      const tg = (window as unknown as { Telegram?: { WebApp?: Tg } }).Telegram?.WebApp;
+      if (tg?.openLink) {
+        tg.ready?.();
+        tg.openLink(url);
+        return;
+      }
+      window.location.href = url;
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [url]);
 
   return (
