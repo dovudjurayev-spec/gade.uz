@@ -11,13 +11,7 @@ const SLIDES: Slide[] = [
   { src: "/brand/slide-3.png", alt: "GA-DE Skinfinity — сыворотка" },
 ];
 
-const INTERVAL_MS = 5000;
-
-const STACK = [
-  { x: 0, y: 0, rot: 0, scale: 1, opacity: 1 },
-  { x: 22, y: 16, rot: 5, scale: 0.97, opacity: 0.85 },
-  { x: -14, y: 28, rot: -7, scale: 0.94, opacity: 0.65 },
-];
+const INTERVAL_MS = 4500;
 
 export function BrandGallery() {
   const [index, setIndex] = useState(0);
@@ -29,28 +23,23 @@ export function BrandGallery() {
     return () => clearInterval(id);
   }, []);
 
-  const go = (next: number) => {
-    if (next !== index) setIndex(next);
-  };
-
   return (
     <div className="w-full flex flex-col items-end pt-16">
-      <div className="relative aspect-square w-full max-w-md">
+      <div className="relative aspect-square w-full max-w-md overflow-hidden rounded-[2.5rem] bg-neutral-100 shadow-[0_20px_50px_-25px_rgba(0,0,0,0.3)]">
         {SLIDES.map((slide, i) => {
-          const offset = (i - index + SLIDES.length) % SLIDES.length;
-          const t = STACK[offset] ?? STACK[STACK.length - 1]!;
+          const isActive = i === index;
           return (
             <div
               key={i}
-              className="absolute inset-0 overflow-hidden rounded-[2.5rem] bg-neutral-200 shadow-[0_15px_40px_-20px_rgba(0,0,0,0.25)]"
+              className="absolute inset-0"
               style={{
-                transform: `translate(${t.x}px, ${t.y}px) rotate(${t.rot}deg) scale(${t.scale})`,
-                opacity: t.opacity,
-                zIndex: SLIDES.length - offset,
+                opacity: isActive ? 1 : 0,
+                transform: isActive ? "scale(1)" : "scale(1.04)",
                 transition:
-                  "transform 700ms cubic-bezier(0.4, 0, 0.2, 1), opacity 700ms ease-out",
+                  "opacity 900ms ease-out, transform 4500ms ease-out",
+                zIndex: isActive ? 2 : 1,
               }}
-              aria-hidden={offset !== 0}
+              aria-hidden={!isActive}
             >
               <Image
                 src={slide.src}
@@ -71,7 +60,7 @@ export function BrandGallery() {
             key={i}
             type="button"
             aria-label={`Слайд ${i + 1}`}
-            onClick={() => go(i)}
+            onClick={() => setIndex(i)}
             className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
               i === index ? "w-6 bg-neutral-900" : "w-1.5 bg-neutral-300 hover:bg-neutral-400"
             }`}
