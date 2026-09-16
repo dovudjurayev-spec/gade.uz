@@ -20,7 +20,7 @@ function extractText(html: string): string | null {
   // Пытаемся вытащить содержимое последнего <div class="text">...</div>
   const m = html.match(/<div\s+class="text">([\s\S]*?)<\/div>\s*$/i);
   if (!m) return null;
-  let t = m[1];
+  let t = m[1] ?? "";
   t = t.replace(/<[^>]+>/g, " ");
   t = t.replace(/&apos;/g, "'").replace(/&amp;/g, "&").replace(/&nbsp;/g, " ");
   t = t.replace(/\s+/g, " ").trim();
