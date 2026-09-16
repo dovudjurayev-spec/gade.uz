@@ -63,12 +63,15 @@ async function handleStart(msg: IncomingMessage) {
     { text: "Instagram", url: "https://www.instagram.com/gade_uz" },
   ]);
   try {
-    await sendMessage({
-      chat_id: msg.chat.id,
-      text: welcomeText(msg.from?.first_name),
-      parse_mode: "HTML",
-      reply_markup: { inline_keyboard: buttons },
-    });
+    await sendMessage(
+      {
+        chat_id: msg.chat.id,
+        text: welcomeText(msg.from?.first_name),
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: buttons },
+      },
+      env.TELEGRAM_TMA_BOT_TOKEN,
+    );
   } catch (e) {
     console.error("telegram /start sendMessage failed", e);
   }
@@ -80,7 +83,7 @@ function displayName(u: CallbackUser): string {
 }
 
 export async function POST(req: Request) {
-  if (!env.TELEGRAM_BOT_TOKEN) {
+  if (!env.TELEGRAM_TMA_BOT_TOKEN && !env.TELEGRAM_BOT_TOKEN) {
     return NextResponse.json({ error: "bot not configured" }, { status: 401 });
   }
   // Если TELEGRAM_WEBHOOK_SECRET задан — сверяем заголовок; если не задан —
