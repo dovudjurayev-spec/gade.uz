@@ -3,7 +3,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { orders } from "@/db/schema";
 import { env } from "@/lib/env";
-import { answerCallbackQuery, editMessageReplyMarkup, sendMessage } from "@/services/telegram/client";
+import {
+  answerCallbackQuery,
+  editMessageReplyMarkup,
+  sendMessage,
+  type InlineKeyboardButton,
+} from "@/services/telegram/client";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +19,56 @@ type CallbackQuery = {
   data?: string;
   message?: { message_id: number; chat: { id: number } };
 };
-type Update = { callback_query?: CallbackQuery };
+type IncomingMessage = {
+  message_id: number;
+  chat: { id: number; type: string };
+  from?: CallbackUser;
+  text?: string;
+};
+type Update = { callback_query?: CallbackQuery; message?: IncomingMessage };
+
+function miniAppUrl(): string | null {
+  if (!env.TELEGRAM_TMA_BOT_USERNAME || !env.TELEGRAM_TMA_APP_SHORT_NAME) return null;
+  return `https://t.me/${env.TELEGRAM_TMA_BOT_USERNAME}/${env.TELEGRAM_TMA_APP_SHORT_NAME}`;
+}
+
+function welcomeText(firstName?: string): string {
+  const hello = firstName ? `Здравствуйте, ${firstName}!` : "Добро пожаловать!";
+  return [
+    `${hello} 👋`,
+    "",
+    "Это официальный магазин <b>GA-DE Cosmetics</b> в Узбекистане.",
+    "Здесь — вся линейка бренда: макияж, уход за лицом и телом, парфюмерия и аксессуары. Только оригинальная продукция.",
+    "",
+    "Что можно сделать в мини-приложении:",
+    "🛍  Собрать заказ из полного каталога",
+    "💳  Оплатить онлайн через Payme",
+    "🚚  Выбрать доставку по Ташкенту, в регион или самовывоз",
+    "❤️  Сохранить любимые товары в «Избранное»",
+    "📦  Отслеживать статус своих заказов",
+    "",
+    "Нажмите кнопку ниже, чтобы открыть магазин.",
+    "",
+    "По вопросам: +998 97 008 26 08 · @gade_uz",
+  ].join("\n");
+}
+
+async function handleStart(msg: IncomingMessage) {
+  const url = miniAppUrl();
+  const buttons: InlineKeyboardButton[][] = url
+    ? [[{ text: "🛍  Открыть магазин", url }]]
+    : [];
+  buttons.push([
+    { text: "📞 Позвонить", url: "tel:+998970082608" },
+    { text: "Instagram", url: "https://www.instagram.com/gade_uz" },
+  ]);
+  await sendMessage({
+    chat_id: msg.chat.id,
+    text: welcomeText(msg.from?.first_name),
+    parse_mode: "HTML",
+    reply_markup: { inline_keyboard: buttons },
+  });
+}
 
 function displayName(u: CallbackUser): string {
   if (u.username) return `@${u.username}`;
@@ -30,6 +84,13 @@ export async function POST(req: Request) {
   }
 
   const update = (await req.json()) as Update;
+
+  const msg = update.message;
+  if (msg?.text && /^\/start(\s|$|@)/i.test(msg.text)) {
+    await handleStart(msg);
+    return NextResponse.json({ ok: true });
+  }
+
   const cq = update.callback_query;
   if (!cq || !cq.data || !cq.message) {
     return NextResponse.json({ ok: true });
