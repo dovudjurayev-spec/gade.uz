@@ -12,6 +12,15 @@ import DeliveryMap from "@/components/DeliveryMap";
 import type { DeliveryTariff } from "@/lib/delivery";
 import { openExternalUrl } from "@/lib/telegram-open-link";
 
+function isDesktopBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  const w = window as unknown as { Telegram?: { WebApp?: { initData?: string } } };
+  if (w.Telegram?.WebApp?.initData) return false;
+  const ua = navigator.userAgent || "";
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(ua);
+  return !isMobile;
+}
+
 type SavedAddress = { id: number; label: string; value: string; isDefault: boolean };
 
 type Props = {
@@ -224,11 +233,16 @@ export function CheckoutForm({
         return;
       }
       if (result && result.ok && result.redirectUrl) {
-        // Онлайн-оплата: открываем Payme (в TMA — через tg.openLink, чтобы
-        // universal link на приложение Payme подхватился). Мини-апп остаётся
-        // на этой странице и пуллит статус заказа, чтобы после оплаты уйти
-        // на success — не полагаясь на callback deep-link (может не сработать,
-        // если юзер оплатил внутри Payme-приложения и просто закрыл его).
+        // На десктопе (не TMA и не мобильный браузер) сразу уводим на Payme Web —
+        // никакого overlay «Ожидаем оплату» не нужно, страница просто редиректится.
+        // На телефоне и в мини-аппе оставляем overlay + пуллинг статуса: universal
+        // link на приложение Payme может увести в другое приложение, а вернувшийся
+        // юзер по колбэку не всегда попадёт назад на checkout.
+        if (isDesktopBrowser()) {
+          clear();
+          window.location.href = result.redirectUrl;
+          return;
+        }
         setWaitingPayment({ number: result.orderNumber, token: result.orderToken });
         openExternalUrl(result.redirectUrl);
         return;

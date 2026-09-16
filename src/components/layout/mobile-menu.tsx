@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, X, ChevronDown, ArrowUpRight, Phone, Mail, Instagram } from "lucide-react";
+import { Menu, X, ChevronDown, ArrowUpRight, Phone, Instagram } from "lucide-react";
 
 type MobileLeaf = { href: string; label: string };
 type MobileSub = { href: string; label: string; children?: MobileLeaf[] };
@@ -254,27 +254,20 @@ export function MobileMenu({ sections }: { sections: MobileSection[] }) {
           </div>
           <div className="mt-2.5 space-y-2">
             <a
-              href="tel:+998000000000"
+              href="tel:+998970082608"
               className="group flex items-center gap-2.5 text-[13px] text-neutral-100 hover:text-white transition-colors"
             >
               <Phone className="h-3.5 w-3.5 text-neutral-400 group-hover:text-white" strokeWidth={1.5} />
-              +998 00 000 00 00
+              +998 97 008 26 08
             </a>
             <a
-              href="mailto:hello@gade.uz"
-              className="group flex items-center gap-2.5 text-[13px] text-neutral-100 hover:text-white transition-colors"
-            >
-              <Mail className="h-3.5 w-3.5 text-neutral-400 group-hover:text-white" strokeWidth={1.5} />
-              hello@gade.uz
-            </a>
-            <a
-              href="https://instagram.com/"
+              href="https://www.instagram.com/gade_uz"
               target="_blank"
               rel="noopener noreferrer"
               className="group flex items-center gap-2.5 text-[13px] text-neutral-100 hover:text-white transition-colors"
             >
               <Instagram className="h-3.5 w-3.5 text-neutral-400 group-hover:text-white" strokeWidth={1.5} />
-              @gade.uz
+              @gade_uz
             </a>
           </div>
         </div>
