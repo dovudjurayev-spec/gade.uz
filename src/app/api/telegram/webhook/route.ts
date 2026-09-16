@@ -62,12 +62,16 @@ async function handleStart(msg: IncomingMessage) {
     { text: "📞 Позвонить", url: "tel:+998970082608" },
     { text: "Instagram", url: "https://www.instagram.com/gade_uz" },
   ]);
-  await sendMessage({
-    chat_id: msg.chat.id,
-    text: welcomeText(msg.from?.first_name),
-    parse_mode: "HTML",
-    reply_markup: { inline_keyboard: buttons },
-  });
+  try {
+    await sendMessage({
+      chat_id: msg.chat.id,
+      text: welcomeText(msg.from?.first_name),
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: buttons },
+    });
+  } catch (e) {
+    console.error("telegram /start sendMessage failed", e);
+  }
 }
 
 function displayName(u: CallbackUser): string {
