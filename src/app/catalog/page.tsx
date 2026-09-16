@@ -1,6 +1,6 @@
 import { listProducts, listCategories, countProducts } from "@/repositories/products";
 import { ProductCard } from "@/components/catalog/product-card";
-import { Reveal } from "@/components/ui/reveal";
+import { ScrollRestore } from "./scroll-restore";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
 import type { ReactNode } from "react";
@@ -104,6 +104,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
 
   return (
     <div className="mx-auto max-w-7xl px-4 md:px-8 py-8 md:py-12">
+      <ScrollRestore />
       {/* Header */}
       <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
         <div>
@@ -288,7 +289,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                 }
                 return (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {cells.map((c, idx) =>
+                    {cells.map((c) =>
                       c.kind === "l2" ? (
                         <h2
                           key={c.key}
@@ -304,9 +305,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                           {c.label}
                         </h3>
                       ) : (
-                        <Reveal key={c.key} delay={(idx % 4) * 60}>
-                          <ProductCard product={c.product} />
-                        </Reveal>
+                        <ProductCard key={c.key} product={c.product} />
                       ),
                     )}
                   </div>
@@ -314,10 +313,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
               }
               return (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {products.map((p, i) => (
-                    <Reveal key={p.id} delay={(i % 4) * 60}>
-                      <ProductCard product={p} />
-                    </Reveal>
+                  {products.map((p) => (
+                    <ProductCard key={p.id} product={p} />
                   ))}
                 </div>
               );
@@ -360,10 +357,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                                 <h3 className="text-sm uppercase tracking-widest text-neutral-600">{s.name}</h3>
                               </div>
                               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {s.items.map((p, k) => (
-                                  <Reveal key={p.id} delay={(k % 4) * 60}>
-                                    <ProductCard product={p} />
-                                  </Reveal>
+                                {s.items.map((p) => (
+                                  <ProductCard key={p.id} product={p} />
                                 ))}
                               </div>
                             </div>
@@ -371,10 +366,8 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                          {g.items.map((p, k) => (
-                            <Reveal key={p.id} delay={(k % 4) * 60}>
-                              <ProductCard product={p} />
-                            </Reveal>
+                          {g.items.map((p) => (
+                            <ProductCard key={p.id} product={p} />
                           ))}
                         </div>
                       )}
@@ -388,11 +381,12 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             <div className="mt-12 flex justify-center">
               <Link
                 href={buildHref(sp, { page: pageNum + 1 })}
-                className="inline-flex items-center gap-2 h-11 px-6 text-xs uppercase tracking-widest border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
+                data-load-more
                 scroll={false}
+                className="inline-flex items-center gap-2 h-11 px-6 text-xs uppercase tracking-widest border border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white transition-colors"
               >
                 Показать ещё
-                <span className="text-neutral-500 group-hover:text-neutral-300 normal-case tracking-normal">
+                <span className="text-neutral-500 normal-case tracking-normal">
                   ({Math.min(PAGE_SIZE, remaining)} из {remaining})
                 </span>
               </Link>

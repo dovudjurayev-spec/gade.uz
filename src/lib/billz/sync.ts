@@ -98,6 +98,19 @@ export async function syncBillzCatalog(): Promise<SyncResult> {
     errors: [],
   };
 
+  // Инкрементальная синхронизация: собираем карту billzId -> billzUpdatedAt(ms),
+  // чтобы пропускать неизменённые товары без единого SELECT/UPDATE.
+  const knownRows = await db
+    .select({ billzId: products.billzId, billzUpdatedAt: products.billzUpdatedAt })
+    .from(products)
+    .where(isNotNull(products.billzId));
+  const knownUpdatedAt = new Map<string, number>();
+  for (const r of knownRows) {
+    if (r.billzId && r.billzUpdatedAt) {
+      knownUpdatedAt.set(r.billzId, r.billzUpdatedAt.getTime());
+    }
+  }
+
   const seenBillzIds: string[] = [];
   let page = 1;
   let totalCount = Infinity;
@@ -109,6 +122,14 @@ export async function syncBillzCatalog(): Promise<SyncResult> {
 
     for (const p of resp.products) {
       seenBillzIds.push(p.id);
+      const incoming = p.updated_at
+        ? new Date(p.updated_at.replace(" ", "T") + "Z").getTime()
+        : null;
+      const known = knownUpdatedAt.get(p.id);
+      if (known != null && incoming != null && known === incoming) {
+        result.skipped += 1;
+        continue;
+      }
       try {
         const changed = await upsertProduct(p, shopId, result);
         if (changed) result.upserted += 1;
