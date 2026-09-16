@@ -33,7 +33,6 @@ const CATEGORY_HIGHLIGHTS: Record<string, string[]> = {
 const DEFAULT_HIGHLIGHTS = [
   "Оригинальная продукция GA-DE",
   "Дерматологически протестировано",
-  "Разработано в Израиле",
 ];
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {

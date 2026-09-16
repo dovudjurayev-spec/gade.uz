@@ -4,6 +4,7 @@ import { db } from "@/db/client";
 import { orderItems, orders } from "@/db/schema";
 import { getCurrentCustomer } from "@/lib/customer-auth";
 import { formatPrice } from "@/lib/money";
+import { PayOrderButton } from "../pay-order-button";
 
 const STATUS: Record<string, string> = {
   pending_payment: "Ожидает оплаты",
@@ -46,6 +47,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ nu
           {new Date(order.createdAt).toLocaleString("ru-RU")} · {STATUS[order.status] ?? order.status}
         </div>
       </div>
+
+      {order.status === "pending_payment" && order.paymentMethod === "payme" && (
+        <PayOrderButton orderNumber={order.number} />
+      )}
 
       <section className="border divide-y">
         {items.map((it) => (

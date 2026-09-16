@@ -217,17 +217,21 @@ export function CheckoutForm({
         ? address
         : undefined;
     startTransition(async () => {
-      const result = await submitOrderAction({
-        name,
-        phone,
-        deliveryMethod: delivery,
-        paymentMethod: payment,
-        address: finalAddress,
-        deliveryLat: delivery === "courier_tashkent" ? coords?.lat : undefined,
-        deliveryLng: delivery === "courier_tashkent" ? coords?.lng : undefined,
-        comment: comment || undefined,
-        items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
-      });
+      const desktop = isDesktopBrowser();
+      const result = await submitOrderAction(
+        {
+          name,
+          phone,
+          deliveryMethod: delivery,
+          paymentMethod: payment,
+          address: finalAddress,
+          deliveryLat: delivery === "courier_tashkent" ? coords?.lat : undefined,
+          deliveryLng: delivery === "courier_tashkent" ? coords?.lng : undefined,
+          comment: comment || undefined,
+          items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        },
+        { returnMode: desktop ? "web" : "tma" },
+      );
       if (result && !result.ok) {
         setError(result.error);
         return;
@@ -238,7 +242,7 @@ export function CheckoutForm({
         // На телефоне и в мини-аппе оставляем overlay + пуллинг статуса: universal
         // link на приложение Payme может увести в другое приложение, а вернувшийся
         // юзер по колбэку не всегда попадёт назад на checkout.
-        if (isDesktopBrowser()) {
+        if (desktop) {
           clear();
           window.location.href = result.redirectUrl;
           return;

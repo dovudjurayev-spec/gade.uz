@@ -98,7 +98,7 @@ export function SiteFooter() {
               </li>
               <li className="flex items-start gap-3">
                 <Send className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
-                <a href="https://t.me/GA_DE_bot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Заказ через бота</a>
+                <a href="https://t.me/gadecosmeticsbot" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Магазин в Telegram</a>
               </li>
               <li className="flex items-start gap-3">
                 <Instagram className="h-4 w-4 mt-0.5 text-neutral-500 shrink-0" strokeWidth={1.5} />
