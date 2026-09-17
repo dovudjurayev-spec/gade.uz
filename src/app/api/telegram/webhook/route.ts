@@ -53,7 +53,7 @@ function welcomeText(firstName?: string): string {
   ].join("\n");
 }
 
-async function handleStart(msg: IncomingMessage) {
+async function handleStart(msg: IncomingMessage): Promise<{ ok: true } | { ok: false; error: string; tokenTail?: string }> {
   const url = miniAppUrl();
   const buttons: InlineKeyboardButton[][] = url
     ? [[{ text: "🛍  Открыть магазин", url }]]
@@ -62,6 +62,8 @@ async function handleStart(msg: IncomingMessage) {
     { text: "📞 Позвонить", url: "tel:+998970082608" },
     { text: "Instagram", url: "https://www.instagram.com/gade_uz" },
   ]);
+  const token = env.TELEGRAM_TMA_BOT_TOKEN ?? env.TELEGRAM_BOT_TOKEN;
+  const tokenTail = token ? token.slice(-6) : "(none)";
   try {
     await sendMessage(
       {
@@ -70,10 +72,13 @@ async function handleStart(msg: IncomingMessage) {
         parse_mode: "HTML",
         reply_markup: { inline_keyboard: buttons },
       },
-      env.TELEGRAM_TMA_BOT_TOKEN,
+      token,
     );
+    return { ok: true };
   } catch (e) {
-    console.error("telegram /start sendMessage failed", e);
+    const error = e instanceof Error ? e.message : String(e);
+    console.error("telegram /start sendMessage failed", error, "tokenTail=", tokenTail);
+    return { ok: false, error, tokenTail };
   }
 }
 
@@ -100,8 +105,8 @@ export async function POST(req: Request) {
 
   const msg = update.message;
   if (msg?.text && /^\/start(\s|$|@)/i.test(msg.text)) {
-    await handleStart(msg);
-    return NextResponse.json({ ok: true });
+    const result = await handleStart(msg);
+    return NextResponse.json(result);
   }
 
   const cq = update.callback_query;
