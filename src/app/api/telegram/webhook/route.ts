@@ -105,8 +105,8 @@ export async function POST(req: Request) {
 
   const msg = update.message;
   if (msg?.text && /^\/start(\s|$|@)/i.test(msg.text)) {
-    const result = await handleStart(msg);
-    return NextResponse.json(result);
+    await handleStart(msg);
+    return NextResponse.json({ ok: true });
   }
 
   const cq = update.callback_query;
