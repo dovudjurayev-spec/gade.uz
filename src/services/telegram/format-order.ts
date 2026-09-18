@@ -57,15 +57,38 @@ export function formatOrderMessage(order: Order, items: OrderItem[]): string {
   return lines.join("\n");
 }
 
+type Row = ({ text: string; url: string } | { text: string; callback_data: string })[];
+
+function adminRow(orderId: number, appUrl: string): Row | null {
+  return /^https:\/\//.test(appUrl)
+    ? [{ text: "В админке", url: `${appUrl}/admin/orders/${orderId}` }]
+    : null;
+}
+
 export function orderKeyboard(orderId: number, phone: string, appUrl: string) {
   void phone;
-  const isPublic = /^https:\/\//.test(appUrl);
-  const rows: (
-    | { text: string; url: string }
-    | { text: string; callback_data: string }
-  )[][] = [[{ text: "Принять в работу", callback_data: `accept:${orderId}` }]];
-  if (isPublic) {
-    rows.push([{ text: "В админке", url: `${appUrl}/admin/orders/${orderId}` }]);
-  }
+  const rows: Row[] = [[{ text: "Принять в работу", callback_data: `accept:${orderId}` }]];
+  const admin = adminRow(orderId, appUrl);
+  if (admin) rows.push(admin);
+  return { inline_keyboard: rows };
+}
+
+export function acceptedKeyboard(orderId: number, phone: string, appUrl: string) {
+  const rows: Row[] = [
+    [
+      { text: "✅ Доставлен", callback_data: `delivered:${orderId}` },
+      { text: "❌ Не доставлен", callback_data: `cancel:${orderId}` },
+    ],
+    [{ text: "Позвонить", url: `tel:${phone}` }],
+  ];
+  const admin = adminRow(orderId, appUrl);
+  if (admin) rows.push(admin);
+  return { inline_keyboard: rows };
+}
+
+export function finalKeyboard(orderId: number, phone: string, appUrl: string) {
+  const rows: Row[] = [[{ text: "Позвонить", url: `tel:${phone}` }]];
+  const admin = adminRow(orderId, appUrl);
+  if (admin) rows.push(admin);
   return { inline_keyboard: rows };
 }

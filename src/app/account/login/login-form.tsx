@@ -14,7 +14,7 @@ const STEP_LABEL: Record<RegisterStep, string> = {
   code: "Код из письма",
 };
 
-export function LoginForm() {
+export function LoginForm({ redirectTo = "/account" }: { redirectTo?: string } = {}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [registerStep, setRegisterStep] = useState<RegisterStep>("name");
@@ -55,7 +55,7 @@ export function LoginForm() {
         else setError("Ошибка");
         return;
       }
-      router.push("/account");
+      router.push(redirectTo);
       router.refresh();
     } finally {
       setPending(false);
@@ -109,7 +109,7 @@ export function LoginForm() {
         else setError("Ошибка");
         return;
       }
-      router.push("/account");
+      router.push(redirectTo);
       router.refresh();
     } finally {
       setPending(false);

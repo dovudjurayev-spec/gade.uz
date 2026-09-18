@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { customerAddresses } from "@/db/schema";
@@ -22,6 +23,7 @@ function formatAddress(a: {
 
 export default async function CheckoutPage() {
   const customer = await getCurrentCustomer();
+  if (!customer) redirect("/account/login?next=/checkout");
 
   let addresses: { id: number; label: string; value: string; isDefault: boolean }[] = [];
   if (customer) {

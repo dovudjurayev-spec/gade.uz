@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { orders, orderItems } from "@/db/schema";
+import { orders, orderItems, orderTelegramMessages } from "@/db/schema";
 import { env } from "@/lib/env";
 import { sendLocation, sendMessage } from "./client";
 import { formatOrderMessage, orderKeyboard } from "./format-order";
@@ -42,6 +42,15 @@ export async function sendOrderToManagers(orderId: number): Promise<number | nul
         reply_markup: kb,
       });
       if (firstMessageId === null) firstMessageId = res.message_id;
+
+      try {
+        await db
+          .insert(orderTelegramMessages)
+          .values({ orderId, chatId, messageId: res.message_id })
+          .onConflictDoNothing();
+      } catch (e) {
+        console.error(`[telegram] failed to record message for chat ${chatId}:`, e);
+      }
 
       if (hasCoords) {
         try {

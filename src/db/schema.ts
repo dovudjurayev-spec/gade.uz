@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   index,
   pgEnum,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 // Prices are stored in tiyin (1 UZS = 100 tiyin) as integers.
@@ -276,6 +277,9 @@ export const orders = pgTable(
     comment: text("comment"),
     telegramMessageId: bigint("telegram_message_id", { mode: "number" }),
     acceptedByManager: varchar("accepted_by_manager", { length: 200 }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    deliveredByManager: varchar("delivered_by_manager", { length: 200 }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -284,6 +288,20 @@ export const orders = pgTable(
     statusIdx: index("orders_status_idx").on(t.status),
     createdIdx: index("orders_created_idx").on(t.createdAt),
     phoneIdx: index("orders_phone_idx").on(t.customerPhone),
+  }),
+);
+
+export const orderTelegramMessages = pgTable(
+  "order_telegram_messages",
+  {
+    orderId: integer("order_id").notNull().references(() => orders.id, { onDelete: "cascade" }),
+    chatId: varchar("chat_id", { length: 64 }).notNull(),
+    messageId: bigint("message_id", { mode: "number" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.orderId, t.chatId] }),
+    orderIdx: index("otm_order_idx").on(t.orderId),
   }),
 );
 

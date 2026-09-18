@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { orders } from "@/db/schema";
+import { orders, orderTelegramMessages } from "@/db/schema";
 import { env } from "@/lib/env";
 import {
   answerCallbackQuery,
@@ -9,6 +9,7 @@ import {
   sendMessage,
   type InlineKeyboardButton,
 } from "@/services/telegram/client";
+import { acceptedKeyboard, finalKeyboard } from "@/services/telegram/format-order";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
 
   const [action, idStr] = cq.data.split(":");
   const orderId = Number(idStr);
-  if (action !== "accept" || !Number.isFinite(orderId)) {
+  if (!Number.isFinite(orderId) || !action || !["accept", "delivered", "cancel"].includes(action)) {
     await answerCallbackQuery({ callback_query_id: cq.id, text: "Неизвестное действие" });
     return NextResponse.json({ ok: true });
   }
@@ -127,39 +128,93 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (order.acceptedByManager) {
+  const manager = displayName(cq.from);
+  const now = new Date();
+
+  if (action === "accept") {
+    if (order.acceptedByManager) {
+      await answerCallbackQuery({
+        callback_query_id: cq.id,
+        text: `Уже в работе у ${order.acceptedByManager}`,
+        show_alert: true,
+      });
+      return NextResponse.json({ ok: true });
+    }
+    await db
+      .update(orders)
+      .set({ acceptedByManager: manager, acceptedAt: now, status: "processing" })
+      .where(eq(orders.id, orderId));
+    await broadcast(orderId, acceptedKeyboard(orderId, order.customerPhone, env.APP_URL),
+      `🟡 Заказ №${order.number} принял ${manager}`);
+    await answerCallbackQuery({ callback_query_id: cq.id, text: "Принято" });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (order.status === "delivered" || order.status === "cancelled") {
     await answerCallbackQuery({
       callback_query_id: cq.id,
-      text: `Уже в работе у ${order.acceptedByManager}`,
+      text: `Заказ уже закрыт (${order.status})`,
+      show_alert: true,
+    });
+    return NextResponse.json({ ok: true });
+  }
+  if (!order.acceptedByManager) {
+    await answerCallbackQuery({
+      callback_query_id: cq.id,
+      text: "Сначала нажмите «Принять в работу»",
       show_alert: true,
     });
     return NextResponse.json({ ok: true });
   }
 
-  const manager = displayName(cq.from);
+  if (action === "delivered") {
+    await db
+      .update(orders)
+      .set({ status: "delivered", deliveredByManager: manager, deliveredAt: now })
+      .where(eq(orders.id, orderId));
+    await broadcast(orderId, finalKeyboard(orderId, order.customerPhone, env.APP_URL),
+      `✅ Заказ №${order.number} доставлен — ${manager}`);
+    await answerCallbackQuery({ callback_query_id: cq.id, text: "Отмечено доставленным" });
+    return NextResponse.json({ ok: true });
+  }
+
+  // action === "cancel"
   await db
     .update(orders)
-    .set({ acceptedByManager: manager, status: "processing" })
+    .set({ status: "cancelled", deliveredByManager: manager, deliveredAt: now })
     .where(eq(orders.id, orderId));
-
-  // Убираем кнопку «Принять в работу», оставляем «Позвонить» + ссылку в админку
-  await editMessageReplyMarkup({
-    chat_id: cq.message.chat.id,
-    message_id: cq.message.message_id,
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "Позвонить", url: `tel:${order.customerPhone}` }],
-        [{ text: "В админке", url: `${env.APP_URL}/admin/orders/${orderId}` }],
-      ],
-    },
-  });
-
-  await sendMessage({
-    chat_id: cq.message.chat.id,
-    text: `✅ Заказ №${order.number} принял ${manager}`,
-    reply_to_message_id: cq.message.message_id,
-  });
-
-  await answerCallbackQuery({ callback_query_id: cq.id, text: "Принято" });
+  await broadcast(orderId, finalKeyboard(orderId, order.customerPhone, env.APP_URL),
+    `❌ Заказ №${order.number} не доставлен — ${manager}`);
+  await answerCallbackQuery({ callback_query_id: cq.id, text: "Отмечено как не доставлен" });
   return NextResponse.json({ ok: true });
+}
+
+async function broadcast(
+  orderId: number,
+  replyMarkup: { inline_keyboard: InlineKeyboardButton[][] },
+  text: string,
+): Promise<void> {
+  const rows = await db.query.orderTelegramMessages.findMany({
+    where: eq(orderTelegramMessages.orderId, orderId),
+  });
+  for (const row of rows) {
+    try {
+      await editMessageReplyMarkup({
+        chat_id: row.chatId,
+        message_id: row.messageId,
+        reply_markup: replyMarkup,
+      });
+    } catch (e) {
+      console.error(`[telegram] editMessageReplyMarkup chat ${row.chatId} msg ${row.messageId} failed:`, e);
+    }
+    try {
+      await sendMessage({
+        chat_id: row.chatId,
+        text,
+        reply_to_message_id: row.messageId,
+      });
+    } catch (e) {
+      console.error(`[telegram] broadcast sendMessage to ${row.chatId} failed:`, e);
+    }
+  }
 }

@@ -4,9 +4,22 @@ import { LoginForm } from "./login-form";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountLoginPage() {
+function safeNext(raw: string | string[] | undefined): string {
+  const val = Array.isArray(raw) ? raw[0] : raw;
+  if (!val) return "/account";
+  if (!val.startsWith("/") || val.startsWith("//")) return "/account";
+  return val;
+}
+
+export default async function AccountLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string | string[] }>;
+}) {
+  const { next } = await searchParams;
+  const target = safeNext(next);
   const customer = await getCurrentCustomer();
-  if (customer) redirect("/account");
+  if (customer) redirect(target);
 
   return (
     <div className="min-h-[calc(100vh-160px)] flex items-center justify-center px-4 py-12">
@@ -15,7 +28,7 @@ export default async function AccountLoginPage() {
           <h1 className="text-xl font-sans">Вход в кабинет</h1>
           <p className="text-xs text-neutral-500 mt-1">Введите email и пароль</p>
         </div>
-        <LoginForm />
+        <LoginForm redirectTo={target} />
       </div>
     </div>
   );
