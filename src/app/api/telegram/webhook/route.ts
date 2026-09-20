@@ -145,7 +145,7 @@ export async function POST(req: Request) {
       .set({ acceptedByManager: manager, acceptedAt: now, status: "processing" })
       .where(eq(orders.id, orderId));
     await broadcast(orderId, acceptedKeyboard(orderId, order.customerPhone, env.APP_URL),
-      `🟡 Заказ №${order.number} принял ${manager}`);
+      `🟡 Заказ №${order.number} принял ${manager}`, cq);
     await answerCallbackQuery({ callback_query_id: cq.id, text: "Принято" });
     return NextResponse.json({ ok: true });
   }
@@ -173,7 +173,7 @@ export async function POST(req: Request) {
       .set({ status: "delivered", deliveredByManager: manager, deliveredAt: now })
       .where(eq(orders.id, orderId));
     await broadcast(orderId, finalKeyboard(orderId, order.customerPhone, env.APP_URL),
-      `✅ Заказ №${order.number} доставлен — ${manager}`);
+      `✅ Заказ №${order.number} доставлен — ${manager}`, cq);
     await answerCallbackQuery({ callback_query_id: cq.id, text: "Отмечено доставленным" });
     return NextResponse.json({ ok: true });
   }
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
     .set({ status: "cancelled", deliveredByManager: manager, deliveredAt: now })
     .where(eq(orders.id, orderId));
   await broadcast(orderId, finalKeyboard(orderId, order.customerPhone, env.APP_URL),
-    `❌ Заказ №${order.number} не доставлен — ${manager}`);
+    `❌ Заказ №${order.number} не доставлен — ${manager}`, cq);
   await answerCallbackQuery({ callback_query_id: cq.id, text: "Отмечено как не доставлен" });
   return NextResponse.json({ ok: true });
 }
@@ -193,10 +193,17 @@ async function broadcast(
   orderId: number,
   replyMarkup: { inline_keyboard: InlineKeyboardButton[][] },
   text: string,
+  cq: CallbackQuery,
 ): Promise<void> {
-  const rows = await db.query.orderTelegramMessages.findMany({
+  const stored = await db.query.orderTelegramMessages.findMany({
     where: eq(orderTelegramMessages.orderId, orderId),
   });
+  const rows =
+    stored.length > 0
+      ? stored
+      : cq.message
+        ? [{ chatId: String(cq.message.chat.id), messageId: cq.message.message_id }]
+        : [];
   for (const row of rows) {
     try {
       await editMessageReplyMarkup({
