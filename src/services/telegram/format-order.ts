@@ -74,12 +74,12 @@ export function orderKeyboard(orderId: number, phone: string, appUrl: string) {
 }
 
 export function acceptedKeyboard(orderId: number, phone: string, appUrl: string) {
+  void phone;
   const rows: Row[] = [
     [
       { text: "✅ Доставлен", callback_data: `delivered:${orderId}` },
       { text: "❌ Не доставлен", callback_data: `cancel:${orderId}` },
     ],
-    [{ text: "Позвонить", url: `tel:${phone}` }],
   ];
   const admin = adminRow(orderId, appUrl);
   if (admin) rows.push(admin);
@@ -87,7 +87,8 @@ export function acceptedKeyboard(orderId: number, phone: string, appUrl: string)
 }
 
 export function finalKeyboard(orderId: number, phone: string, appUrl: string) {
-  const rows: Row[] = [[{ text: "Позвонить", url: `tel:${phone}` }]];
+  void phone;
+  const rows: Row[] = [];
   const admin = adminRow(orderId, appUrl);
   if (admin) rows.push(admin);
   return { inline_keyboard: rows };

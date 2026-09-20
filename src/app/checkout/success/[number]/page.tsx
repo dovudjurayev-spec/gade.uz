@@ -89,7 +89,9 @@ export default async function SuccessPage({
 
       <div className="flex flex-col md:flex-row gap-3 justify-center">
         <a
-          href="https://t.me/"
+          href="https://t.me/jade_tashkent"
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center justify-center border border-neutral-900 px-6 py-3 text-sm uppercase tracking-widest hover:bg-brand hover:text-white"
         >
           Написать в Telegram
