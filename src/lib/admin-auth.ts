@@ -5,15 +5,17 @@ import { env } from "./env";
 const COOKIE_NAME = "gade_admin";
 const MAX_AGE_SEC = 60 * 60 * 8; // 8ч
 
-// Формат hash: scrypt$<salt_hex>$<hash_hex>
+// Формат hash: scrypt:<salt_hex>:<hash_hex>
+// Совместимость: старые значения scrypt$<salt>$<hash> тоже принимаются.
 export function hashPassword(password: string): string {
   const salt = randomBytes(16);
   const hash = scryptSync(password, salt, 64);
-  return `scrypt$${salt.toString("hex")}$${hash.toString("hex")}`;
+  return `scrypt:${salt.toString("hex")}:${hash.toString("hex")}`;
 }
 
 export function verifyPassword(password: string, stored: string): boolean {
-  const [scheme, saltHex, hashHex] = stored.split("$");
+  const sep = stored.includes(":") ? ":" : "$";
+  const [scheme, saltHex, hashHex] = stored.split(sep);
   if (scheme !== "scrypt" || !saltHex || !hashHex) return false;
   const salt = Buffer.from(saltHex, "hex");
   const expected = Buffer.from(hashHex, "hex");
